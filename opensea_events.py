@@ -2,6 +2,8 @@ import requests
 import pandas as pd
 import datetime as dt
 
+from class_models import *
+
 
 def sec_since_epoch(time):
     # calculate seconds since epoch of last updated time
@@ -42,6 +44,7 @@ def get_opensea_events(
     eventType="created",
     collection="boredapeyachtclub",
     api_key="3eb775e344f14798b49718e86f55608c",
+    limit=50,
 ):
     if lastUpdated is None:
         lastUpdated = dt.datetime(2000, 1, 1, 0, 0, 0)
@@ -50,7 +53,6 @@ def get_opensea_events(
     if isinstance(lastUpdated, int):
         lastUpdated = lastUpdated
     else:
-
         lastUpdated = sec_since_epoch(lastUpdated)
 
     params = {
@@ -58,8 +60,8 @@ def get_opensea_events(
         "event_type": eventType,
         "only_opensea": "false",
         "occurred_after": lastUpdated,
-        "offset": offset * 50,
-        "limit": 50,
+        "offset": offset * limit,
+        "limit": limit,
     }
 
     headers = {"Accept": "application/json", "X-API-KEY": api_key}
@@ -75,112 +77,88 @@ def get_opensea_events(
         return None
 
 
-response = get_opensea_events(
-    eventType="successful",
-    collection="boredapeyachtclub",
-)
-
-
-def get_opensea_sales(collection="boredapeyachtclub", lastUpdated=None):
+def update_opensea_events(collection="boredapeyachtclub", lastUpdated=None, limit=50):
     """
     Get Sales data for a collection from opensea API
     """
+    ###Get sales data from opensea
     all_sales = []
-    i = 0
-    while True:
-        print(i)
+    i = 0  # define iterative variable for offsetting
+    print("-----------------------------------------------------------")
+    print(f"Getting {collection} sales data...")
+    while True:  # infinite loop, continues until no more detail is obtained
+
         sales = get_opensea_events(
             offset=i,
             eventType="successful",
             collection=collection,
             lastUpdated=lastUpdated,
+            limit=limit,
         )
         i += 1  # add 1 to offsetting variable with each loop
 
         if sales is not None and len(sales["asset_events"]) > 0:
             for sale in sales["asset_events"]:
-                # is item single or a bundle
-                if int(sale["quantity"]) > 1:
-                    asset_df = pd.DataFrame(sale["asset_bundle"]["assets"])
-                    asset_id = asset_df["token_id"].to_list()
-                    asset_url = asset_df["image_url"].to_list()
-                elif sale["quantity"] == "1":
-                    asset_id = sale["asset"]["token_id"]
-                    asset_url = sale["asset"]["image_url"]
-                sale_price = int(sale["total_price"]) / 1e18
-                USD_conv = float(sale["payment_token"]["usd_price"])
-                USD_price = sale_price * USD_conv
-                sale_i = {
-                    "sale_id": sale["id"],
-                    # info about NFT itself
-                    "id": asset_id,
-                    "sale_quantity": sale["quantity"],
-                    "collection": sale["collection_slug"],
-                    "image_url": asset_url,
-                    # info about transcation
-                    "time": sale["created_date"],
-                    "event_type": sale["event_type"],
-                    "seller_wallet": sale["seller"]["address"],
-                    "buyer_wallet": sale["winner_account"]["address"],
-                    "block_hash": sale["transaction"]["block_hash"],
-                    # info about sale price
-                    "sale_currency": sale["payment_token"]["symbol"],
-                    "sale_price": sale_price,
-                    "curr_to_USD": USD_conv,
-                    "USD_price": USD_price,
-                }
-                all_sales.append(sale_i)
+                all_sales.append(dict_to_sales(sale))
+
         else:
-            return all_sales
+            break
+    print(f"{len(all_sales)} sales found.")
 
+    # get data from opensea for NFT transfers
+    all_transfers = []
+    i = 0
+    print("-----------------------------------------------------------")
+    print(f"Getting {collection} transfers data...")
+    while True:
+        transfers = get_opensea_events(
+            offset=i,
+            eventType="transfer",  # event type for listing is "created"
+            collection=collection,
+            lastUpdated=lastUpdated,
+            limit=limit,
+        )
+        i += 1  # add 1 to offsetting variable with each loop
+        if transfers is not None and len(transfers["asset_events"]) > 0:
+            for t in transfers["asset_events"]:
+                all_transfers.append(dict_to_transfer(t))
 
-BAYC_all = pd.DataFrame(get_opensea_sales(collection="boredapeyachtclub"))
-BAYC_today = pd.DataFrame(
-    get_opensea_sales(
-        collection="boredapeyachtclub", lastUpdated=dt.datetime(2021, 12, 28, 0, 0, 0)
-    )
-)
+        else:
+            break
+    print(f"{len(all_transfers)} transfers found.")
 
-
-def get_opensea_listings(collection="boredapeyachtclub"):
-
+    # Get listings data from opensea
     all_listings = []
     i = 0
+    print("-----------------------------------------------------------")
+    print(f"Getting {collection} listings data...")
     while True:
-
         listings = get_opensea_events(
             offset=i,
             eventType="created",  # event type for listing is "created"
             collection=collection,
+            lastUpdated=lastUpdated,
+            limit=limit,
         )
-
         i += 1  # add 1 to offsetting variable with each loop
-        print(f"Getting listings for {collection}, {i} calls performed.")
+
         if listings is not None and len(listings["asset_events"]) > 0:
-            for l in listings["asset_events"]:
-                # if acction for bundle, pull out all asset ids
-                if int(l["quantity"]) > 1 and l["asset_bundle"] is not None:
-                    asset_id = [d["token_id"] for d in l["asset_bundle"]["assets"]]
-                elif l["quantity"] == "1":
-                    asset_id = l["asset"]["token_id"]
-                else:
-                    asset_id = None
-
-                listing_i = {
-                    "listing_id": l["id"],
-                    "asset_id": asset_id,
-                    "collection": l["collection_slug"],
-                    "event_type": l["event_type"],
-                    "time": l["created_date"],
-                    "seller_address": l["seller"]["address"],
-                    "listing_price": int(l["ending_price"]) / 1e18,
-                }
-                all_listings.append(listing_i)
+            for auction in listings["asset_events"]:
+                all_listings.append(dict_to_listing(auction))
         else:
-            return all_listings
+            break
+    print(f"{len(all_listings)} listings found.")
+    #### TO DO - append to database
 
 
-def get_opensea_cancellations(collection="boredapeyachtclub"):
+test = update_opensea_events(
+    lastUpdated=dt.datetime(2021, 12, 26, 0, 0, 0),
+    collection="boredapeyachtclub",
+    limit=50,
+)
+
+
+"""def get_opensea_cancellations(collection="boredapeyachtclub"):
     all_cancs = []
     i = 0
     while True:
@@ -213,12 +191,4 @@ def get_opensea_cancellations(collection="boredapeyachtclub"):
                 all_cancs.append(canc_i)
         else:
             return all_cancs
-
-
-listings = pd.DataFrame(get_opensea_listings())
-cancs = pd.DataFrame(get_opensea_cancellations())
-
-both = listings.append(cancs)
-# sort by time
-both = both.sort_values("time", ascending=False)
-# keep most recent update
+"""
