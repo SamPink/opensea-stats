@@ -91,7 +91,8 @@ class listing_event(BaseModel):
     event_type: str
     time: dt.datetime
     seller_address: str
-    listing_price: int
+    listing_price: float
+    duration: int
 
 
 def dict_to_listing(response_json):
@@ -99,6 +100,11 @@ def dict_to_listing(response_json):
     if int(response_json["quantity"]) > 1:
         print("ignoring listing of bundle")
         return None
+
+    if response_json["duration"] is None:
+        auction_time = 1e9
+    else:
+        auction_time = response_json["duration"]
 
     x = listing_event(
         **{
@@ -108,6 +114,7 @@ def dict_to_listing(response_json):
             "event_type": response_json["event_type"],
             "time": response_json["created_date"],
             "seller_address": response_json["seller"]["address"],
+            "duration": auction_time,
             "listing_price": int(response_json["ending_price"]) / 1e18,
         }
     )

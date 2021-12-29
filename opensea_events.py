@@ -85,6 +85,11 @@ def update_opensea_events(
     update_DB=True,
     starting_offset=0,
 ):
+
+    if lastUpdated is None:
+        # find when database was last updated. Will then call Opensea API, returning events only after this point
+        lastUpdated = get_latest_DB_update(collection)
+
     """
     Get Sales,listings,transfers and cancellations data for a collection from opensea API
     """
@@ -152,6 +157,7 @@ def update_opensea_events(
     i = starting_offset
     print("-----------------------------------------------------------")
     print(f"Getting {collection} listings data...")
+
     while True:
         listings = get_opensea_events(
             offset=i,
@@ -207,40 +213,62 @@ def update_opensea_events(
         return all_sales, all_transfers, all_listings, all_canc
 
 
-test = update_opensea_events(collection="boredapeyachtclub", limit=50, update_DB=True)
+# test = update_opensea_events(collection="boredapeyachtclub", limit=50, update_DB=True)
 
 
-"""def get_opensea_cancellations(collection="boredapeyachtclub"):
-    all_cancs = []
-    i = 0
-    while True:
-        canc = get_opensea_events(
-            offset=i,
-            eventType="cancelled",  # event type for listing is "created"
+def update_current_listings(collection, updateDB=True):
+    # update events for collection
+    if updateDB:
+        update_opensea_events(
             collection=collection,
+            lastUpdated=None,  # if None, will automatically calculate
+            limit=50,
+            update_DB=updateDB,
+            starting_offset=0,
         )
 
-        i += 1  # add 1 to offsetting variable with each loop
-        print(f"Getting cancellations for {collection}, {i} calls performed.")
-        if canc is not None and len(canc["asset_events"]) > 0:
-            for c in canc["asset_events"]:
-                # if acction for bundle, pull out all asset ids
-                if int(c["quantity"]) > 1 and c["asset_bundle"] is not None:
-                    asset_id = [d["token_id"] for d in c["asset_bundle"]["assets"]]
-                elif c["quantity"] == "1":
-                    asset_id = c["asset"]["token_id"]
-                else:
-                    asset_id = None
-
-                canc_i = {
-                    "listing_id": c["id"],
-                    "asset_id": asset_id,
-                    "collection": c["collection_slug"],
-                    "time": c["created_date"],
-                    "event_type": c["event_type"],
-                    "seller_address": c["seller"]["address"],
-                }
-                all_cancs.append(canc_i)
+    # define projection without ids - containing just things we need to determine if still listed
+    projection = {"_id": 0, "time": 1, "event_type": 1, "asset_id": 1}
+    all = pd.DataFrame()  # define empty deataframe
+    event_types = ["sales", "listings", "cancellations", "transfers"]
+    for e in event_types:
+        if e == "listings":  # get all info for listings
+            listings = read_mongo(collection=f"{collection}_{e}", return_df=True)
+            df = listings.copy()
         else:
-            return all_cancs
-"""
+            df = read_mongo(
+                collection=f"{collection}_{e}",
+                query_projection=projection,
+                return_df=True,
+            )
+        all = all.append(df)
+
+    # sort by date
+    all = all.sort_values("time")
+    # drop duplicates
+    last_update = all.drop_duplicates(subset=["asset_id"], keep="last")
+    still_listed = last_update[last_update.event_type == "created"]
+    # calculate listing ending time
+    still_listed["listing_ending"] = still_listed["time"] + pd.to_timedelta(
+        still_listed["duration"], "s"
+    )
+    # keep only listings where listing end is in the future
+    still_listed[still_listed.listing_ending > dt.datetime.now()]
+
+    if updateDB:
+        write_mongo(
+            collection=f"{collection}_still_listed", data=still_listed, overwrite=True
+        )
+    else:
+        return still_listed
+
+
+start_time = dt.datetime.now()
+
+update_current_listings(collection="lazy-lions", updateDB=True)
+
+end_time = dt.datetime.now()
+
+print(end_time - start_time)
+
+print("yeet ur nan")

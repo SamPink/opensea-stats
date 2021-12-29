@@ -21,7 +21,7 @@ def write_mongo(collection, data, overwrite=False, database_name="mvh"):
 
     #
     if overwrite:
-        n_docs = my_collection.count_documents()
+        n_docs = my_collection.count_documents({})
         print(f"deleting {n_docs} from {collection} mongoDB collection.")
         my_collection.delete_many({})  # delete all data
 
@@ -103,25 +103,22 @@ def read_mongo(
         return None
 
 
-test = read_mongo(
-    collection="apes_sales",
-    query_projection=["ape_id", "sale_price", "buyer_name"],
-    query_sort=[("sale_price", -1)],
-    query_limit=10,
-    return_df=True,
-)
+def get_latest_DB_update(collection):
 
-test
+    projection = {"time": 1, "_id": 0}
+    sorting = [("time", -1)]
+    recent_updates = []
+    for event in ["sales", "transfers", "listings", "cancellations"]:
+        recent_update = read_mongo(
+            collection=f"{collection}_{event}",
+            query_projection=projection,
+            query_sort=sorting,
+            query_limit=1,
+        )
+        if recent_update is not None:
+            recent_updates.append(recent_update[0]["time"])
 
-
-def collection_last_update(collection, database_name="mvh", time_column="time"):
-    url = "mongodb+srv://ape-gang:SW68cArWhOdB4Fhx@cluster0.sryj9.mongodb.net/ape_gang?retryWrites=true&w=majority"
-    my_client = MongoClient(url, ssl_cert_reqs=ssl.CERT_NONE)
-    my_db = my_client[database_name]
-
-    recent_sale = read_mongo(
-        collection=f"{collection}_sales",
-        query_projection=[time_column],
-        query_sort=[(time_column, -1)],
-        query_limit=1,
-    )
+    if len(recent_updates) > 0:
+        return min(recent_updates)
+    else:
+        return None
