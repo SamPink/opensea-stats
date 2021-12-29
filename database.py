@@ -3,8 +3,15 @@ from pymongo import MongoClient
 import pymongo
 import ssl
 
+database_name = "mvh"
 
-def write_mongo(collection, data, overwrite=False, database_name="ape_gang"):
+
+def write_mongo(
+    collection,
+    data,
+    database_name,
+    overwrite=False,
+):
     """Wrapper for the mongoDB .insert_many() function to add to the database
 
     Args:
@@ -56,12 +63,12 @@ def write_mongo(collection, data, overwrite=False, database_name="ape_gang"):
 
 
 def read_mongo(
+    database_name,
     collection,
     query_filter={},
     query_projection=[],
     query_sort=[],
     query_limit=None,
-    database_name="ape_gang",
     return_df=False,
 ):
     url = "mongodb+srv://ape-gang:SW68cArWhOdB4Fhx@cluster0.sryj9.mongodb.net/ape_gang?retryWrites=true&w=majority"
