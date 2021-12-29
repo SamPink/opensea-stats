@@ -67,9 +67,9 @@ def read_mongo(
     url = "mongodb+srv://ape-gang:SW68cArWhOdB4Fhx@cluster0.sryj9.mongodb.net/ape_gang?retryWrites=true&w=majority"
     my_client = MongoClient(url, ssl_cert_reqs=ssl.CERT_NONE)
     my_db = my_client[database_name]
-    if collection not in my_db.collection_names():
+    if collection not in my_db.list_collection_names():
         print(
-            f"Collection '{collection}' doesn't exist.\nPlease select one of the following; {my_db.collection_names()}"
+            f"Collection '{collection}' doesn't exist.\nPlease select one of the following; {my_db.list_collection_names()}"
         )
         return None
     my_collection = my_db[collection]

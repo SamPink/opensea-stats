@@ -109,5 +109,31 @@ def dict_to_listing(response_json):
     return x
 
 
-class eventCancelled(BaseModel):
-    test: str
+class cancellation_event(BaseModel):
+    listing_id: int
+    asset_id: int
+    collection: str
+    event_type: str
+    time: dt.datetime
+    seller_address: str
+
+
+def dict_to_canc(response_json):
+    """convert the JSON dictionary returned from opensea API to our defined cancellation event class"""
+
+    if int(response_json["quantity"]) > 1:
+        print("ignoring cancellation of bundle")
+        return None
+
+    x = cancellation_event(
+        **{
+            "listing_id": int(response_json["id"]),
+            "asset_id": int(response_json["asset"]["token_id"]),
+            "collection": response_json["collection_slug"],
+            "event_type": response_json["event_type"],
+            "time": response_json["created_date"],
+            "seller_address": response_json["seller"]["address"],
+        }
+    )
+
+    return x
