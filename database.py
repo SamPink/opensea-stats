@@ -3,6 +3,8 @@ from pymongo import MongoClient
 import pymongo
 import ssl
 
+database_name = "mvh"
+
 
 def write_mongo(collection, data, overwrite=False, database_name="mvh"):
     """Wrapper for the mongoDB .insert_many() function to add to the database
@@ -56,6 +58,7 @@ def write_mongo(collection, data, overwrite=False, database_name="mvh"):
 
 
 def read_mongo(
+    database_name,
     collection,
     query_filter={},
     query_projection=[],

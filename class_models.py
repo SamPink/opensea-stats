@@ -23,6 +23,10 @@ def dict_to_sales(response_json):
     if int(response_json["quantity"]) > 1:
         print("ignoring sale of bundle")
         return None
+    if response_json["transaction"]["block_hash"] is None:
+        block_hash = ""
+    else:
+        block_hash = response_json["transaction"]["block_hash"]
 
     x = sale_event(
         **{
@@ -35,7 +39,7 @@ def dict_to_sales(response_json):
             "event_type": response_json["event_type"],
             "seller_wallet": response_json["seller"]["address"],
             "buyer_wallet": response_json["winner_account"]["address"],
-            "block_hash": response_json["transaction"]["block_hash"],
+            "block_hash": block_hash,
             # info about sale price
             "sale_currency": response_json["payment_token"]["symbol"],
             "sale_price": int(response_json["total_price"]) / 1e18,
