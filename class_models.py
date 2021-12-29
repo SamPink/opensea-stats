@@ -14,7 +14,7 @@ class sale_event(BaseModel):
     buyer_wallet: str
     block_hash: str
     sale_currency: str
-    sale_price: int
+    sale_price: float
 
 
 def dict_to_sales(response_json):
@@ -77,6 +77,7 @@ def dict_to_transfer(response_json):
             "block_hash": response_json["transaction"]["block_hash"],
         }
     )
+    return x
 
 
 class listing_event(BaseModel):

@@ -79,14 +79,18 @@ def get_opensea_events(
 
 
 def update_opensea_events(
-    collection="boredapeyachtclub", lastUpdated=None, limit=50, update_DB=True
+    collection="boredapeyachtclub",
+    lastUpdated=None,
+    limit=50,
+    update_DB=True,
+    starting_offset=0,
 ):
     """
     Get Sales,listings,transfers and cancellations data for a collection from opensea API
     """
     ###Get sales data from opensea
     all_sales = []
-    i = 0  # define iterative variable for offsetting
+    i = starting_offset  # define iterative variable for offsetting
     print("-----------------------------------------------------------")
     print(f"Getting {collection} sales data...")
     while True:  # infinite loop, continues until no more detail is obtained
@@ -99,19 +103,24 @@ def update_opensea_events(
             limit=limit,
         )
         i += 1  # add 1 to offsetting variable with each loop
-        print(f"{i} API calls made")
 
         if sales is not None and len(sales["asset_events"]) > 0:
+            print(f"{i} API calls made")
             for sale in sales["asset_events"]:
-                all_sales.append(dict_to_sales(sale))
+                sale_class = dict_to_sales(sale)
+                if sale_class is not None:
+                    all_sales.append(dict(sale_class))
 
         else:
             break
     print(f"{len(all_sales)} sales found.")
+    # add data to database if update_DB = True
+    if update_DB:
+        write_mongo(collection=f"{collection}_sales", data=all_sales)
 
     # get data from opensea for NFT transfers
     all_transfers = []
-    i = 0
+    i = starting_offset
     print("-----------------------------------------------------------")
     print(f"Getting {collection} transfers data...")
     while True:
@@ -123,18 +132,24 @@ def update_opensea_events(
             limit=limit,
         )
         i += 1  # add 1 to offsetting variable with each loop
-        print(f"{i} API calls made")
+
         if transfers is not None and len(transfers["asset_events"]) > 0:
+            print(f"{i} API calls made")
             for t in transfers["asset_events"]:
-                all_transfers.append(dict_to_transfer(t))
+                transfer_class = dict_to_transfer(t)
+                if transfer_class is not None:
+                    all_transfers.append(dict(transfer_class))
 
         else:
             break
     print(f"{len(all_transfers)} transfers found.")
+    # add data to database if update_DB = True
+    if update_DB:
+        write_mongo(collection=f"{collection}_transfers", data=all_transfers)
 
     # Get listings data from opensea
     all_listings = []
-    i = 0
+    i = starting_offset
     print("-----------------------------------------------------------")
     print(f"Getting {collection} listings data...")
     while True:
@@ -146,24 +161,29 @@ def update_opensea_events(
             limit=limit,
         )
         i += 1  # add 1 to offsetting variable with each loop
-        print(f"{i} API calls made")
 
         if listings is not None and len(listings["asset_events"]) > 0:
+            print(f"{i} API calls made")
             for auction in listings["asset_events"]:
-                all_listings.append(dict_to_listing(auction))
+                list_class = dict_to_listing(auction)
+                if list_class is not None:
+                    all_listings.append(dict(list_class))
         else:
             break
     print(f"{len(all_listings)} listings found.")
+    # add data to database if update_DB = True
+    if update_DB:
+        write_mongo(collection=f"{collection}_listings", data=all_listings)
 
     ## Get cancellation data from opensea
     all_canc = []
-    i = 0
+    i = starting_offset
     print("-----------------------------------------------------------")
     print(f"Getting {collection} cancellation data...")
     while True:
         canc = get_opensea_events(
             offset=i,
-            eventType="cancellation",  # get cancellation data
+            eventType="cancelled",  # get cancellation data
             collection=collection,
             lastUpdated=lastUpdated,
             limit=limit,
@@ -173,22 +193,21 @@ def update_opensea_events(
 
         if canc is not None and len(canc["asset_events"]) > 0:
             for c in canc["asset_events"]:
-                all_canc.append(dict_to_listing(c))
+                canc_class = dict_to_canc(c)
+                if canc_class is not None:
+                    all_canc.append(dict(canc_class))
         else:
             break
     print(f"{len(all_canc)} cancellations found.")
 
     # add data to database if update_DB = True
     if update_DB:
-        write_mongo(collection=f"{collection}_sales", data=all_sales)
-        write_mongo(collection=f"{collection}_transfers", data=all_transfers)
-        write_mongo(collection=f"{collection}_listings", data=all_listings)
         write_mongo(collection=f"{collection}_cancellations", data=all_canc)
     else:
         return all_sales, all_transfers, all_listings, all_canc
 
 
-test = update_opensea_events(collection="lazy-lions", limit=50, update_DB=True)
+test = update_opensea_events(collection="boredapeyachtclub", limit=50, update_DB=True)
 
 
 """def get_opensea_cancellations(collection="boredapeyachtclub"):

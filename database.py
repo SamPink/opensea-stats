@@ -4,7 +4,7 @@ import pymongo
 import ssl
 
 
-def write_mongo(collection, data, overwrite=False, database_name="ape_gang"):
+def write_mongo(collection, data, overwrite=False, database_name="mvh"):
     """Wrapper for the mongoDB .insert_many() function to add to the database
 
     Args:
@@ -61,7 +61,7 @@ def read_mongo(
     query_projection=[],
     query_sort=[],
     query_limit=None,
-    database_name="ape_gang",
+    database_name="mvh",
     return_df=False,
 ):
     url = "mongodb+srv://ape-gang:SW68cArWhOdB4Fhx@cluster0.sryj9.mongodb.net/ape_gang?retryWrites=true&w=majority"
@@ -112,7 +112,7 @@ test = read_mongo(
 test
 
 
-def collection_last_update(collection, database_name="ape_gang", time_column="time"):
+def collection_last_update(collection, database_name="mvh", time_column="time"):
     url = "mongodb+srv://ape-gang:SW68cArWhOdB4Fhx@cluster0.sryj9.mongodb.net/ape_gang?retryWrites=true&w=majority"
     my_client = MongoClient(url, ssl_cert_reqs=ssl.CERT_NONE)
     my_db = my_client[database_name]
@@ -123,5 +123,3 @@ def collection_last_update(collection, database_name="ape_gang", time_column="ti
         query_sort=[(time_column, -1)],
         query_limit=1,
     )
-
-    recent_
