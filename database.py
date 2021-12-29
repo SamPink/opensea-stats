@@ -58,7 +58,6 @@ def write_mongo(collection, data, overwrite=False, database_name="mvh"):
 
 
 def read_mongo(
-    database_name,
     collection,
     query_filter={},
     query_projection=[],
