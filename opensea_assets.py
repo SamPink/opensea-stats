@@ -24,6 +24,19 @@ def get_opensea_asset(
     return response
 
 
+def get_opensea_metadata(collection, api_key="3eb775e344f14798b49718e86f55608c"):
+
+    url = f"https://api.opensea.io/api/v1/collection/{collection}"
+
+    headers = {"Accept": "application/json", "X-API-KEY": api_key}
+
+    response = requests.request("GET", url, headers=headers).json()
+
+    return response
+
+
+get_opensea_metadata("boredapeyachtclub")
+
 assets = pd.DataFrame()
 assets_traits = pd.DataFrame()
 for i in range(0, 2):  # change this to get more assets
