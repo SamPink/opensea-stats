@@ -24,35 +24,27 @@ def get_opensea_asset(
     return response
 
 
-toucans = pd.DataFrame()
-toucans_traits = pd.DataFrame()
-for i in range(0, 2):
+assets = pd.DataFrame()
+assets_traits = pd.DataFrame()
+for i in range(0, 2):  # change this to get more assets
     response = get_opensea_asset(i)
-    for toucan in response["assets"]:
-        df = pd.json_normalize(toucan)
+    for asset in response["assets"]:
+        df = pd.json_normalize(asset)
         traits = df.traits.item()
         tr = {}
         tr["name"] = df.name.item()
         for trait in traits:
             tr[trait["trait_type"]] = trait["value"]
-        toucans_traits = toucans_traits.append(pd.DataFrame(tr, index=[0]))
-        toucans = toucans.append(df)
+        assets_traits = assets_traits.append(pd.DataFrame(tr, index=[0]))
+        assets = assets.append(df)
 
 # count number of traits of each apr
-trait_list = [
-    "Headwear",
-    "Body",
-    "Background",
-    "Emotion",
-    "Smoke",
-    "Eyewear",
-    "Neckwear",
-    "Legendary Doge",
-]
-toucans_traits["trait_n"] = toucans_traits[trait_list].count(axis=1)
+trait_list = assets_traits.columns
+
+assets_traits["trait_n"] = assets_traits[trait_list].count(axis=1)
 
 # calculate rarity (proportion of apes with each single trait)
-apes = toucans_traits
+apes = assets_traits
 apes_with_rarity = apes
 for i in trait_list:
     apes_with_trait_i = apes[apes[i].notna()].shape[0]
@@ -62,44 +54,19 @@ for i in trait_list:
         i_proportion, left_on=i, right_index=True, suffixes=("", "_rarity"), how="left"
     )
 
+# create an array of the columns with the rarity
+rarity_list = []
+for i in trait_list:
+    rarity_list.append(i + "_rarity")
+
+
 # calculate mean of all singe trait rarity
-apes_with_rarity["mean_trait_rarity"] = apes_with_rarity[
-    [
-        "Headwear_rarity",
-        "Body_rarity",
-        "Background_rarity",
-        "Emotion_rarity",
-        "Smoke_rarity",
-        "Eyewear_rarity",
-        "Neckwear_rarity",
-        "Legendary Doge_rarity",
-    ]
-].mean(axis=1)
+apes_with_rarity["mean_trait_rarity"] = apes_with_rarity[rarity_list].mean(axis=1)
 
 # calculate rarity of most rare trait
-apes_with_rarity["min_trait_rarity"] = apes_with_rarity[
-    [
-        "Headwear_rarity",
-        "Body_rarity",
-        "Background_rarity",
-        "Emotion_rarity",
-        "Smoke_rarity",
-        "Eyewear_rarity",
-        "Neckwear_rarity",
-        "Legendary Doge_rarity",
-    ]
-].min(axis=1)
+apes_with_rarity["min_trait_rarity"] = apes_with_rarity[rarity_list].min(axis=1)
 
 # calculate rarity of least rare trait
-apes_with_rarity["max_trait_rarity"] = apes_with_rarity[
-    [
-        "Headwear_rarity",
-        "Body_rarity",
-        "Background_rarity",
-        "Emotion_rarity",
-        "Smoke_rarity",
-        "Eyewear_rarity",
-        "Neckwear_rarity",
-        "Legendary Doge_rarity",
-    ]
-].max(axis=1)
+apes_with_rarity["max_trait_rarity"] = apes_with_rarity[rarity_list].max(axis=1)
+
+print(apes_with_rarity)
