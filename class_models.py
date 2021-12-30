@@ -27,6 +27,18 @@ def None_to_str(string):
     return string
 
 
+def get_asset_id(response_json):
+
+    if int(response_json["id"]) > 1e6 and response_json["asset"]["name"] is None:
+        asset_id = -69
+    elif int(response_json["id"]) > 1e6:
+        asset_id = response_json["asset"]["name"]
+        asset_id = int(asset_id.split("#")[1])
+    else:
+        asset_id = int(response_json["id"])
+    return asset_id
+
+
 def dict_to_sales(response_json):
     """convert the JSON dictionary returned from opensea API to our defined sales event class"""
     # if item is a bundle (not single item)
@@ -37,7 +49,7 @@ def dict_to_sales(response_json):
     x = sale_event(
         **{
             "sale_id": int(response_json["id"]),
-            "asset_id": int(response_json["asset"]["token_id"]),
+            "asset_id": get_asset_id(response_json),
             "sale_quantity": int(response_json["quantity"]),
             "collection": response_json["collection_slug"],
             "image_url": response_json["asset"]["image_url"],
@@ -76,7 +88,7 @@ def dict_to_transfer(response_json):
     x = transfer_event(
         **{
             "transfer_id": int(response_json["id"]),
-            "asset_id": int(response_json["asset"]["token_id"]),
+            "asset_id": get_asset_id(response_json),
             "sale_quantity": int(response_json["quantity"]),
             "collection": response_json["collection_slug"],
             "image_url": response_json["asset"]["image_url"],
@@ -119,7 +131,7 @@ def dict_to_listing(response_json):
     x = listing_event(
         **{
             "listing_id": int(response_json["id"]),
-            "asset_id": int(response_json["asset"]["token_id"]),
+            "asset_id": get_asset_id(response_json),
             "collection": response_json["collection_slug"],
             "event_type": response_json["event_type"],
             "time": response_json["created_date"],
@@ -150,7 +162,7 @@ def dict_to_canc(response_json):
     x = cancellation_event(
         **{
             "listing_id": int(response_json["id"]),
-            "asset_id": int(response_json["asset"]["token_id"]),
+            "asset_id": get_asset_id(response_json),
             "collection": response_json["collection_slug"],
             "event_type": response_json["event_type"],
             "time": response_json["created_date"],
