@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+black
+motor
+pymongo
+uvicorn
+dnspython
+pandas
+requests
+tweepy
+sklearn
