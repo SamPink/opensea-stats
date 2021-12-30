@@ -17,16 +17,22 @@ class sale_event(BaseModel):
     sale_price: float
 
 
+# if None type, breaks the pydantic models
+# so, convert none type to empty string
+def None_to_str(string):
+    if string is None:
+        string = ""
+    else:
+        string = string
+    return string
+
+
 def dict_to_sales(response_json):
     """convert the JSON dictionary returned from opensea API to our defined sales event class"""
     # if item is a bundle (not single item)
     if int(response_json["quantity"]) > 1:
         print("ignoring sale of bundle")
         return None
-    if response_json["transaction"]["block_hash"] is None:
-        block_hash = ""
-    else:
-        block_hash = response_json["transaction"]["block_hash"]
 
     x = sale_event(
         **{
@@ -37,11 +43,11 @@ def dict_to_sales(response_json):
             "image_url": response_json["asset"]["image_url"],
             "time": response_json["created_date"],
             "event_type": response_json["event_type"],
-            "seller_wallet": response_json["seller"]["address"],
-            "buyer_wallet": response_json["winner_account"]["address"],
-            "block_hash": block_hash,
+            "seller_wallet": None_to_str(response_json["seller"]["address"]),
+            "buyer_wallet": None_to_str(response_json["winner_account"]["address"]),
+            "block_hash": None_to_str(response_json["transaction"]["block_hash"]),
             # info about sale price
-            "sale_currency": response_json["payment_token"]["symbol"],
+            "sale_currency": None_to_str(response_json["payment_token"]["symbol"]),
             "sale_price": int(response_json["total_price"]) / 1e18,
         }
     )
@@ -76,9 +82,13 @@ def dict_to_transfer(response_json):
             "image_url": response_json["asset"]["image_url"],
             "time": response_json["created_date"],
             "event_type": response_json["event_type"],
-            "from_wallet": response_json["transaction"]["from_account"]["address"],
-            "to_wallet": response_json["transaction"]["to_account"]["address"],
-            "block_hash": response_json["transaction"]["block_hash"],
+            "from_wallet": None_to_str(
+                response_json["transaction"]["from_account"]["address"]
+            ),
+            "to_wallet": None_to_str(
+                response_json["transaction"]["to_account"]["address"]
+            ),
+            "block_hash": None_to_str(response_json["transaction"]["block_hash"]),
         }
     )
     return x
@@ -144,7 +154,7 @@ def dict_to_canc(response_json):
             "collection": response_json["collection_slug"],
             "event_type": response_json["event_type"],
             "time": response_json["created_date"],
-            "seller_address": response_json["seller"]["address"],
+            "seller_address": None_to_str(response_json["seller"]["address"]),
         }
     )
 

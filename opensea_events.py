@@ -81,12 +81,14 @@ def get_opensea_events(
 def update_opensea_events(
     collection="boredapeyachtclub",
     lastUpdated=None,
+    find_lastUpdated_from_DB=True,
+    starting_offset=0,
     limit=50,
     update_DB=True,
-    starting_offset=0,
+    overwrite_DB=False,
 ):
 
-    if lastUpdated is None:
+    if lastUpdated is None and find_lastUpdated_from_DB:
         # find when database was last updated. Will then call Opensea API, returning events only after this point
         lastUpdated = get_latest_DB_update(collection)
 
@@ -121,7 +123,10 @@ def update_opensea_events(
     print(f"{len(all_sales)} sales found.")
     # add data to database if update_DB = True
     if update_DB:
-        write_mongo(collection=f"{collection}_sales", data=all_sales)
+        print("write sales to MongoDB")
+        write_mongo(
+            collection=f"{collection}_sales", data=all_sales, overwrite=overwrite_DB
+        )
 
     # get data from opensea for NFT transfers
     all_transfers = []
@@ -150,7 +155,11 @@ def update_opensea_events(
     print(f"{len(all_transfers)} transfers found.")
     # add data to database if update_DB = True
     if update_DB:
-        write_mongo(collection=f"{collection}_transfers", data=all_transfers)
+        write_mongo(
+            collection=f"{collection}_transfers",
+            data=all_transfers,
+            overwrite=overwrite_DB,
+        )
 
     # Get listings data from opensea
     all_listings = []
@@ -179,7 +188,11 @@ def update_opensea_events(
     print(f"{len(all_listings)} listings found.")
     # add data to database if update_DB = True
     if update_DB:
-        write_mongo(collection=f"{collection}_listings", data=all_listings)
+        write_mongo(
+            collection=f"{collection}_listings",
+            data=all_listings,
+            overwrite=overwrite_DB,
+        )
 
     ## Get cancellation data from opensea
     all_canc = []
@@ -208,7 +221,11 @@ def update_opensea_events(
 
     # add data to database if update_DB = True
     if update_DB:
-        write_mongo(collection=f"{collection}_cancellations", data=all_canc)
+        write_mongo(
+            collection=f"{collection}_cancellations",
+            data=all_canc,
+            overwrite=overwrite_DB,
+        )
     else:
         return all_sales, all_transfers, all_listings, all_canc
 
@@ -216,20 +233,21 @@ def update_opensea_events(
 # test = update_opensea_events(collection="boredapeyachtclub", limit=50, update_DB=True)
 
 
-def update_current_listings(collection, updateDB=True):
+def update_current_listings(collection, updateDB=True, find_lastUpdated_from_DB=True):
     # update events for collection
     if updateDB:
         update_opensea_events(
             collection=collection,
             lastUpdated=None,  # if None, will automatically calculate
             limit=50,
-            update_DB=updateDB,
+            update_DB=True,
             starting_offset=0,
+            find_lastUpdated_from_DB=find_lastUpdated_from_DB,
         )
 
     # define projection without ids - containing just things we need to determine if still listed
     projection = {"_id": 0, "time": 1, "event_type": 1, "asset_id": 1}
-    all = pd.DataFrame()  # define empty deataframe
+    all = pd.DataFrame()  # define empty dataframe
     event_types = ["sales", "listings", "cancellations", "transfers"]
     for e in event_types:
         if e == "listings":  # get all info for listings
@@ -263,12 +281,24 @@ def update_current_listings(collection, updateDB=True):
         return still_listed
 
 
-start_time = dt.datetime.now()
+collections = [
+    "bored-ape-kennel-club",
+    "boredapeyachtclub",
+    "chromie-squiggle-by-snowfro",
+    "cool-cats-nft",
+    "cryptoadz-by-gremplin",
+    "cryptomories",
+    "cyberkongz",
+    "guttercatgang",
+    "gutterdogs",
+    "lazy-lions",
+    "mutant-ape-yacht-club",
+    "pudgypenguins",
+    "the-doge-pound",
+    "toucan-gang",
+]
 
-update_current_listings(collection="lazy-lions", updateDB=True)
+for i in collections:
+    update_current_listings(collection=i)
 
-end_time = dt.datetime.now()
-
-print(end_time - start_time)
-
-print("yeet ur nan")
+print("DONE!")
