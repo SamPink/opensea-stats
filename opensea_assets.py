@@ -78,6 +78,7 @@ def get_collection_assets(collection, id_col="token_id"):
         assets_traits = assets_traits.assign(
             asset_id=lambda x: x[id_col].str.extract("(\d+)")
         )
+        assets_traits["asset_id"] = pd.to_numeric(assets_traits["asset_id"])
 
     assets_traits["trait_n"] = assets_traits[traits].count(axis=1)
 
@@ -120,21 +121,3 @@ def get_collection_assets(collection, id_col="token_id"):
 
 
 get_collection_assets("ape-gang-old", id_col="name")
-collections = [
-    "bored-ape-kennel-club",
-    # "boredapeyachtclub",
-    "chromie-squiggle-by-snowfro",
-    "cool-cats-nft",
-    "cryptoadz-by-gremplin",
-    "cryptomories",
-    "cyberkongz",
-    "guttercatgang",
-    "gutterdogs",
-    "lazy-lions",
-    "mutant-ape-yacht-club",
-    "pudgypenguins",
-    "the-doge-pound",
-    "toucan-gang",
-]
-for x in collections:
-    get_collection_assets(x, id_col="name")

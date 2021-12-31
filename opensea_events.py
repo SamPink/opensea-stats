@@ -287,28 +287,3 @@ def update_current_listings(collection, update_DB=True, find_lastUpdated_from_DB
         )
     else:
         return still_listed
-
-
-collections = [
-    "bored-ape-kennel-club",
-    "boredapeyachtclub",
-    "chromie-squiggle-by-snowfro",
-    "cool-cats-nft",
-    "cryptoadz-by-gremplin",
-    "cryptomories",
-    "cyberkongz",
-    "guttercatgang",
-    "gutterdogs",
-    "lazy-lions",
-    "mutant-ape-yacht-club",
-    "pudgypenguins",
-    "the-doge-pound",
-    "toucan-gang",
-]
-
-ag = ["ape-gang", "ape-gang-old"]
-
-for i in ag:
-    update_current_listings(collection=i)
-
-print("DONE!")
