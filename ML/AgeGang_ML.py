@@ -130,7 +130,7 @@ def train_ApeGangML(
 ):
 
     # preprocess categorical data
-    ml_input = preprocess_ApeGang()
+    ml_input = preprocess_ApeGang(sales=sales)
     # scale numeric data
     scaler = StandardScaler()
     scaler.fit(ml_input[num_cols])

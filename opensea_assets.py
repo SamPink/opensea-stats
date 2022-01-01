@@ -118,6 +118,3 @@ def get_collection_assets(collection, id_col="token_id"):
         overwrite=True,
         database_name="mvh",
     )
-
-
-get_collection_assets("ape-gang-old", id_col="name")

@@ -238,52 +238,22 @@ def update_opensea_events(
             )
 
 
-# test = update_opensea_events(collection="boredapeyachtclub", limit=50, update_DB=True)
+"""collections = [
+    "chromie-squiggle-by-snowfro",
+    "cool-cats-nft",
+    "cryptoadz-by-gremplin",
+    "cryptomories",
+    "guttercatgang",
+    "toucan-gang",
+    "the-doge-pound",
+]
 
-
-def update_current_listings(collection, update_DB=True, find_lastUpdated_from_DB=True):
-    # update events for collection
-    if update_DB:
-        update_opensea_events(
-            collection=collection,
-            lastUpdated=None,  # if None, will automatically calculate
-            limit=50,
-            update_DB=True,
-            starting_offset=0,
-            find_lastUpdated_from_DB=find_lastUpdated_from_DB,
-        )
-
-    # define projection without ids - containing just things we need to determine if still listed
-    projection = {"_id": 0, "time": 1, "event_type": 1, "asset_id": 1}
-    all = pd.DataFrame()  # define empty dataframe
-    event_types = ["sales", "listings", "cancellations", "transfers"]
-    for e in event_types:
-        if e == "listings":  # get all info for listings
-            listings = read_mongo(collection=f"{collection}_{e}", return_df=True)
-            df = listings.copy()
-        else:
-            df = read_mongo(
-                collection=f"{collection}_{e}",
-                query_projection=projection,
-                return_df=True,
-            )
-        all = all.append(df)
-
-    # sort by date
-    all = all.sort_values("time")
-    # drop duplicates
-    last_update = all.drop_duplicates(subset=["asset_id"], keep="last")
-    still_listed = last_update[last_update.event_type == "created"]
-    # calculate listing ending time
-    still_listed["listing_ending"] = still_listed["time"] + pd.to_timedelta(
-        still_listed["duration"], "s"
+for i in collections:
+    update_opensea_events(
+        collection=i,
+        limit=50,
+        eventTypes=["listings"],
+        find_lastUpdated_from_DB=False,
+        overwrite_DB=True,
     )
-    # keep only listings where listing end is in the future
-    still_listed[still_listed.listing_ending > dt.datetime.now()]
-
-    if update_DB:
-        write_mongo(
-            collection=f"{collection}_still_listed", data=still_listed, overwrite=True
-        )
-    else:
-        return still_listed
+"""

@@ -1,3 +1,4 @@
+import re
 from pydantic import BaseModel
 import datetime as dt
 
@@ -28,14 +29,18 @@ def None_to_str(string):
 
 
 def get_asset_id(response_json):
+    """function to pull out NFT ID"""
+    name = response_json["asset"]["name"]
+    id = int(response_json["asset"]["token_id"])
 
-    if int(response_json["id"]) > 1e6 and response_json["asset"]["name"] is None:
+    if id > 1e6 and name is None:
         asset_id = -69
-    elif int(response_json["id"]) > 1e6:
-        asset_id = response_json["asset"]["name"]
-        asset_id = int(asset_id.split("#")[1])
+    elif id > 1e6 and re.search("#\d+", name):
+        asset_id = int(name.split("#")[1])
+    elif id > 1e6:
+        asset_id = name
     else:
-        asset_id = int(response_json["id"])
+        asset_id = id
     return asset_id
 
 
@@ -137,7 +142,7 @@ def dict_to_listing(response_json):
             "asset_id": get_asset_id(response_json),
             "collection": response_json["collection_slug"],
             "event_type": response_json["event_type"],
-            "private_action": response_json["is_private"],
+            "private_auction": response_json["is_private"],
             "auction_type": None_to_str(response_json["auction_type"]),
             "time": response_json["created_date"],
             "seller_address": response_json["seller"]["address"],

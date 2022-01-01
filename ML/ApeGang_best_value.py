@@ -1,0 +1,88 @@
+import pandas as pd
+import datetime as dt
+
+import sys
+
+sys.path.insert(
+    0, "C:/Users/Samue/OneDrive/Documents/opensea-stats"
+)  # tell python to look up a directory
+from database import read_mongo, write_mongo
+
+
+#####find listed apes
+
+# first get apegang new listed apes
+listing_projection = {
+    "_id": 0,
+    "asset_id": 1,
+    "collection": 1,
+    "listing_price": 1,
+    "listing_ending": 1,
+    "listing_currency": 1,
+    "listing_USD": 1,
+}
+
+ape_gang_new_listed = read_mongo(
+    "ape-gang_still_listed", query_projection=listing_projection, return_df=True
+)
+
+ape_gang_old_listed = read_mongo(
+    "ape-gang-old_still_listed",
+    query_projection=listing_projection,
+    return_df=True,
+)
+# merge new and old collections together
+AG_listed = ape_gang_new_listed.append(ape_gang_old_listed)
+
+# download ape trait info
+apes = read_mongo(
+    "ape-gang-old_traits",
+    query_projection={
+        "_id": 0,
+        "asset_id": 1,
+        "Clothes": 1,
+        "Ears": 1,
+        "Eyes": 1,
+        "Fur": 1,
+        "Hat": 1,
+        "Mouth": 1,
+        "rarity_rank": 1,
+    },
+    return_df=True,
+)
+
+
+ApeGang_USD = (
+    read_mongo(
+        "ape-gang-USD-value",
+        # filter for just apes that are listed
+        query_filter={"asset_id": {"$in": AG_listed.asset_id.to_list()}},
+        query_projection={"_id": 0, "pred_USD": 1, "asset_id": 1},
+        return_df=True,
+    )
+    .merge(AG_listed, how="right", on="asset_id")
+    .merge(apes, how="left", on="asset_id")
+)
+
+#
+ApeGang_USD["listing_value"] = ApeGang_USD.pred_USD / ApeGang_USD.listing_USD
+
+
+ApeGang_USD = ApeGang_USD.sort_values("listing_value", ascending=False)
+
+write_mongo(
+    data=ApeGang_USD, collection="ape-gang_bestvalue_opensea_listings", overwrite=True
+)
+
+print(
+    ApeGang_USD.head(10)[
+        [
+            "asset_id",
+            "collection",
+            "listing_USD",
+            "pred_USD",
+            "listing_value",
+            "rarity_rank",
+        ]
+    ]
+)
