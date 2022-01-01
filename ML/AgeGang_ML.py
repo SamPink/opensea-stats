@@ -200,7 +200,8 @@ def pred_ape_price(
     # calculate USD price
     pred_USD["pred_USD"] = median_24hr_price + pred_USD["pred_USD_price_diff"]
     pred_USD = pred_USD.sort_values("pred_USD", ascending=False)
-    return pred_USD.drop(columns="pred_USD_price_diff")
+    pred_USD["asset_id"] = pred_USD.index
+    return pred_USD
 
 
 ape_gang_USD = pred_ape_price()
