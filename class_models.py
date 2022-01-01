@@ -113,6 +113,9 @@ class listing_event(BaseModel):
     event_type: str
     time: dt.datetime
     seller_address: str
+    listing_currency: str
+    auction_type: str
+    private_auction: bool
     listing_price: float
     duration: int
 
@@ -134,9 +137,12 @@ def dict_to_listing(response_json):
             "asset_id": get_asset_id(response_json),
             "collection": response_json["collection_slug"],
             "event_type": response_json["event_type"],
+            "private_action": response_json["is_private"],
+            "auction_type": None_to_str(response_json["auction_type"]),
             "time": response_json["created_date"],
             "seller_address": response_json["seller"]["address"],
             "duration": auction_time,
+            "listing_currency": response_json["payment_token"]["symbol"],
             "listing_price": int(response_json["ending_price"]) / 1e18,
         }
     )
