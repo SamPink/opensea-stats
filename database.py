@@ -59,6 +59,7 @@ def write_mongo(collection, data, overwrite=False, database_name="mvh"):
 
 def read_mongo(
     collection,
+    return_id=False,
     query_filter={},
     query_projection=[],
     query_sort=[],
@@ -71,7 +72,7 @@ def read_mongo(
     my_db = my_client[database_name]
     if collection not in my_db.list_collection_names():
         print(
-            f"Collection '{collection}' doesn't exist.\nPlease select one of the following; {my_db.list_collection_names()}"
+            f"Collection '{collection}' doesn't exist.\nPlease select one of the following; {my_db.list_collection_names()[0:4]}"
         )
         return None
     my_collection = my_db[collection]
@@ -79,6 +80,10 @@ def read_mongo(
     # if no projection input, defult to all columns
     if len(query_projection) < 1:
         query_projection = my_collection.find_one().keys()
+
+    if return_id is False and not isinstance(query_projection, dict):
+        query_projection = dict.fromkeys(query_projection, 1)
+        query_projection["_id"] = 0
 
     # if no limit input, set to all documents
     if query_limit is None:

@@ -104,6 +104,7 @@ def update_current_listings(collection, update_DB=True, find_lastUpdated_from_DB
         return still_listed
 
 
+"""
 collections = [
     "ape-gang",
     "ape-gang-old",
@@ -120,3 +121,4 @@ collections = [
 ]
 for nfts in collections:
     update_current_listings(collection=nfts)
+"""

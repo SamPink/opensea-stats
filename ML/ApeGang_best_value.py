@@ -7,6 +7,13 @@ sys.path.insert(
     0, "C:/Users/Samue/OneDrive/Documents/opensea-stats"
 )  # tell python to look up a directory
 from database import read_mongo, write_mongo
+from current_listings import update_current_listings
+
+update_listings = False  # do we want to update the Database
+if update_listings:
+    # update apegang events
+    for i in ["ape-gang", "ape-gang-old"]:
+        update_current_listings(i)
 
 
 #####find listed apes

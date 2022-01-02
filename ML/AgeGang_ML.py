@@ -21,7 +21,7 @@ sys.path.insert(
 )  # tell python to look up a directory
 from database import read_mongo, write_mongo
 from cryto_prices import update_eth_usd
-from opensea_events import update_current_listings
+from current_listings import update_current_listings
 
 
 # update apegang events
@@ -207,42 +207,3 @@ def pred_ape_price(
 ape_gang_USD = pred_ape_price()
 
 write_mongo("ape-gang-USD-value", ape_gang_USD, overwrite=True)
-
-
-# @app.get("/")
-# def get_root():
-
-#   return {"message": "Welcome to ApeGang NFT price prediction API"}
-
-
-# @app.get("/Welcome/")
-# def welcome_message(name: str):
-#    return {"message": f"Welcome {name}, #WAGMI"}
-
-
-# @app.get("/ApeGang USD price pred/")
-# def ape_id_query(ape_id: int):
-#    return pred_ape_price(ape_ids=[ape_id], model=model)
-
-
-# In[159]:
-
-
-# from pyngrok import ngrok
-
-# ngrok_tunnel = ngrok.connect(8000)
-
-# ngrok_tunnel
-
-
-# In[ ]:
-
-
-# import nest_asyncio
-# import uvicorn
-
-# nest_asyncio.apply()
-# uvicorn.run(app, port=8000)
-
-
-# In[ ]:
