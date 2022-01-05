@@ -3,7 +3,7 @@ import pandas as pd
 import datetime as dt
 
 from opensea.class_models import *
-from database import *
+from opensea.database import *
 
 
 def sec_since_epoch(time):
@@ -273,7 +273,7 @@ def update_opensea_events(
             )
 
 
-collections = [
+"""collections = [
     "ape-gang",
     "ape-gang-old",
     "boredapeyachtclub",
@@ -292,3 +292,4 @@ for nfts in collections:
     update_opensea_events(
         collection=nfts, find_firstUpdated_from_DB=True, find_lastUpdated_from_DB=False
     )
+"""
