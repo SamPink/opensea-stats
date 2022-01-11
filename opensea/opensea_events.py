@@ -2,6 +2,11 @@ import requests
 import pandas as pd
 import datetime as dt
 
+import os, sys
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
 from opensea.class_models import *
 from opensea.database import *
 

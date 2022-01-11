@@ -2,7 +2,12 @@ import pandas as pd
 from Historic_Crypto import HistoricalData
 import datetime as dt
 
-from database import *
+import os, sys
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+from opensea.database import read_mongo, write_mongo
 
 
 def update_eth_usd():

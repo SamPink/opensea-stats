@@ -14,14 +14,15 @@ from sklearn.metrics import mean_absolute_error
 
 import plotly.express as px
 
-import sys
+import os, sys
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
 
-sys.path.insert(
-    0, "C:/Users/Samue/OneDrive/Documents/opensea-stats"
-)  # tell python to look up a directory
-from database import read_mongo, write_mongo
-from cryto_prices import update_eth_usd
-from current_listings import update_current_listings
+
+from opensea.database import read_mongo, write_mongo
+from opensea.cryto_prices import update_eth_usd
+from opensea.current_listings import update_current_listings
 
 
 # update apegang events
@@ -137,7 +138,7 @@ def train_ApeGangML(
     ml_input[num_cols] = scaler.transform(ml_input[num_cols])
 
     # make train-test splits
-    X = ml_input.drop(columns=["asset_id", "price_diff_USD", "_id"])
+    X = ml_input.drop(columns=["asset_id", "price_diff_USD"])
     y = ml_input["price_diff_USD"]
 
     X_train, X_test, y_train, y_test = train_test_split(

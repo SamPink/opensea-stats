@@ -1,7 +1,12 @@
 import pandas as pd
 from Historic_Crypto import HistoricalData
-from database import *
-from opensea_events import *
+import os, sys
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+from opensea.database import *
+from opensea.opensea_events import *
 
 
 def update_current_listings(collection, update_DB=True, find_lastUpdated_from_DB=True):
