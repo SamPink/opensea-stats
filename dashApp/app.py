@@ -5,6 +5,12 @@ from dash import Input, Output, dcc, html
 # importing sys
 import sys
 
+import pandas as pd
+import datetime as dt
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+
 # adding Folder_2 to the system path
 sys.path.insert(0, "./opensea")
 
@@ -34,14 +40,13 @@ CONTENT_STYLE = {
 
 sidebar = html.Div(
     [
-        html.H2("Sidebar", className="display-4"),
+        html.H2("$GANG", className="display-4"),
         html.Hr(),
-        html.P("A simple sidebar layout with navigation links", className="lead"),
+        html.P("Ape Gang Info", className="lead"),
         dbc.Nav(
             [
-                dbc.NavLink("Home", href="/", active="exact"),
-                dbc.NavLink("Page 1", href="/page-1", active="exact"),
-                dbc.NavLink("Page 2", href="/page-2", active="exact"),
+                dbc.NavLink("sales", href="/page-1", active="exact"),
+                dbc.NavLink("stats", href="/page-2", active="exact"),
             ],
             vertical=True,
             pills=True,
@@ -62,21 +67,24 @@ def render_page_content(pathname):
     elif pathname == "/page-1":
         return page_apes(1)
     elif pathname == "/page-2":
-        return html.P("Oh cool, this is page 2!")
+        return page_stats()
     # If the user tries to reach a different page, return a 404 message
     return html.H1("FUCK")
 
 
 # make a callback for dropdown
 @app.callback(
-    Output("title", "value"),
+    Output("ape-grid", "children"),
     [Input("dropdown", "value")],
 )
 def update_output(value):
-    page_apes(1)
+    if value == "price":
+        query_sort = [("sale_price", -1)]
+    elif value == "time":
+        query_sort = [("time", -1)]
+    else:
+        query_sort = [("time", -1)]
 
-
-def page_apes(thing):
     projection = {
         "_id": 0,
         "asset_id": 1,
@@ -89,25 +97,26 @@ def page_apes(thing):
         "ape-gang_sales",
         return_df=True,
         query_projection=projection,
-        query_limit=20,
-        query_sort=[("time", -1)],
+        query_limit=10,
+        query_sort=query_sort,
     )
     apes_old = read_mongo(
         "ape-gang-old_sales",
         return_df=True,
         query_projection=projection,
-        query_limit=20,
-        query_sort=[("time", -1)],
+        query_limit=10,
+        query_sort=query_sort,
     )
-    apes_rarity = read_mongo(
-        "ape-gang-old_traits",
-        return_df=True,
-    )
-
     apes = apes.append(apes_old)
 
     # it seems read mongo cant filter on a list, why it do dis?
-    ape_ids = apes.asset_id.unique()
+    ape_ids = apes.asset_id.unique().tolist()
+
+    apes_rarity = read_mongo(
+        "ape-gang-old_traits",
+        return_df=True,
+        query_filter={"asset_id": {"$in": ape_ids}},
+    )
 
     ApeGang_USD = read_mongo(
         "ape-gang-USD-value",
@@ -121,8 +130,76 @@ def page_apes(thing):
     # join apes_rarity to apes
     apes = apes.merge(apes_rarity, on="asset_id")
 
-    # sort by time
-    apes = apes.sort_values(by=["time"], ascending=False)
+    if value == "rarity":
+        apes = apes.sort_values(by=["rarity_rank"])
+    elif value == "time":
+        # sort by time
+        apes = apes.sort_values(by=["time"], ascending=False)
+    else:
+        apes = apes.sort_values(by=["sale_price"], ascending=False)
+
+    return ape_grid(apes)
+
+
+def page_stats():
+    projection = {
+        "_id": 0,
+        "asset_id": 1,
+        "image_url": 1,
+        "sale_price": 1,
+        "buyer_wallet": 1,
+        "time": 1,
+    }
+    apes = read_mongo(
+        "ape-gang_sales",
+        return_df=True,
+        query_projection=projection,
+        query_limit=100,
+        query_sort=[("time", -1)],
+    )
+    apes_old = read_mongo(
+        "ape-gang-old_sales",
+        return_df=True,
+        query_projection=projection,
+        query_limit=100,
+        query_sort=[("time", -1)],
+    )
+    apes = apes.append(apes_old)
+    apes = read_mongo("ape-gang-old_traits", return_df=True)
+
+    sales = apes.append(apes_old)
+
+    day_n = 30
+    recent_sales = sales[sales.time > dt.datetime.now() - dt.timedelta(days=day_n)]
+    recent_sales = (
+        recent_sales[["asset_id", "sale_price", "time"]]
+        .merge(apes, on="asset_id", how="left")
+        .sort_values("sale_price", ascending=False)
+    )
+
+    # create a plot of rank vs price
+    fig = px.scatter(
+        recent_sales,
+        x="sale_price",
+        y="rarity_rank",
+        color="rarity_rank",
+        hover_data=["asset_id", "sale_price", "time"],
+        title="Rarity vs Price",
+    )
+
+    # plot mean price over time
+    fig2 = px.line(recent_sales, x="time", y="sale_price")
+
+    return html.Div(
+        [
+            html.H2("Ape Sales"),
+            dcc.Graph(figure=fig),
+            dcc.Graph(figure=fig2),
+        ]
+    )
+
+
+def page_apes(thing):
 
     dropdown_options = ["time", "price", "rarity"]
 
@@ -138,10 +215,15 @@ def page_apes(thing):
         children=[
             html.H2(thing, id="title"),
             dropdown,
-            dbc.Row(
-                [ape_card(apes.iloc[[i]]) for i in range(apes.shape[0])],
-            ),
+            dbc.Row(id="ape-grid"),
         ]
+    )
+
+
+def ape_grid(apes):
+    return dbc.Row(
+        [ape_card(apes.iloc[[i]]) for i in range(apes.shape[0])],
+        id="ape-grid",
     )
 
 
