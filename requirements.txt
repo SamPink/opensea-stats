@@ -9,3 +9,6 @@ pandas
 requests
 tweepy
 sklearn
+dash
+plotly
+dash_bootstrap_components
