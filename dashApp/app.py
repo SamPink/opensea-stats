@@ -48,14 +48,14 @@ def get_opensea(collection):
         "ape-gang_sales",
         return_df=True,
         query_projection=projection,
-        query_limit=100,
+        query_limit=1000,
         query_sort=query_sort,
     )
     apes_old = read_mongo(
         "ape-gang-old_sales",
         return_df=True,
         query_projection=projection,
-        query_limit=100,
+        query_limit=1000,
         query_sort=query_sort,
     )
     apes = apes.append(apes_old)
