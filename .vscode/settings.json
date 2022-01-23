@@ -1,0 +1,10 @@
+{
+    "python.analysis.extraPaths": [
+        "..",
+        "./opensea"
+    ],
+    "python.linting.pylintEnabled": false,
+    "python.linting.pycodestyleEnabled": false,
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true
+}
