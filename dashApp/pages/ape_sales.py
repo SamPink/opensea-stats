@@ -26,16 +26,14 @@ layout = html.Div(
         html.H1("Hello World"),
         html.H2(id="title"),
         dropdown,
-        html.Div(
-            id="rows",
-        ),
+        html.Div(id="grid"),
     ]
 )
 
 
 # make a callback for dropdown
 @callback(
-    [Output("rows", "children")],
+    [Output("grid", "children")],
     [Input("dropdown", "value")],
 )
 def update_output(value):
@@ -103,8 +101,9 @@ def update_output(value):
 
 
 def ape_grid(apes):
+    print(apes)
     return [ape_card(apes.iloc[[0]])]
-    #return dbc.Row([ape_card(apes.iloc[[i]]) for i in range(apes.shape[0])])
+    # return dbc.Row([ape_card(apes.iloc[[i]]) for i in range(apes.shape[0])])
 
 
 def ape_card(ape):
