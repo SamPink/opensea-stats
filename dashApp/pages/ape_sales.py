@@ -60,6 +60,7 @@ def update_output(opensea_data, value):
 
 
 def ape_card(ape):
+    print(ape.info())
     return dbc.Card(
         [
             dbc.CardImg(
@@ -70,7 +71,7 @@ def ape_card(ape):
                 [
                     html.H4(f"Ape {ape.asset_id.item()}"),
                     html.P(f"Sale Price ETH: {ape.sale_price.item()}"),
-                    html.P(f"predicted diff USD: {ape.pred_USD_price_diff.item()}"),
+                    # html.P(f"predicted diff USD: {ape.pred_USD_price_diff.item()}"),
                     html.P(f"Buyer: {ape.buyer_wallet.item()}"),
                     html.P(f"Rarity {ape.rarity_rank.item()}"),
                 ]

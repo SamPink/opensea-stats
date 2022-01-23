@@ -8,12 +8,6 @@ import datetime as dt
 
 from dash import Dash, dcc, html, Input, Output, callback
 
-import sys
-
-sys.path.insert(0, "./opensea")
-
-from database import read_mongo
-
 
 def page_stats(opensea_data):
     recent_sales = pd.DataFrame(opensea_data)
