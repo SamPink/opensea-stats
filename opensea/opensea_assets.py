@@ -1,12 +1,15 @@
 import io
 from pandas import json_normalize
+import time
 import requests
 import json
 import pandas as pd
 from math import ceil
 import numpy as np
-from database import *
 import re
+
+
+from database import *
 
 
 def get_opensea_asset(
@@ -39,7 +42,7 @@ def get_opensea_metadata(collection, api_key="3eb775e344f14798b49718e86f55608c")
     return response
 
 
-x = response = get_opensea_asset(offset=0, collection="ape-gang", limit=2)
+
 
 
 def get_collection_assets(collection, id_col="token_id"):
@@ -58,6 +61,10 @@ def get_collection_assets(collection, id_col="token_id"):
     assets = pd.DataFrame()
     for i in range(0, n_api_calls):  # change this to get more assets
         response = get_opensea_asset(offset=i, collection=collection)
+        if 'detail' in response.keys():
+            time.sleep(5)
+            print(response)
+            response = get_opensea_asset(offset=i, collection=collection)
         for asset in response["assets"]:
             df = pd.json_normalize(asset)
             for t in asset["traits"]:
@@ -118,3 +125,4 @@ def get_collection_assets(collection, id_col="token_id"):
         overwrite=True,
         database_name="mvh",
     )
+
