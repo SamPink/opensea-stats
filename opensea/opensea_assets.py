@@ -26,7 +26,7 @@ def get_opensea_asset(
 
     headers = {"Accept": "application/json", "X-API-KEY": api_key}
 
-    response = requests.request("GET", url, params=params, headers=headers).json()
+    response = requests.request("GET", url, params=params, headers=headers)
 
     return response
 
@@ -37,7 +37,7 @@ def get_opensea_metadata(collection, api_key="3eb775e344f14798b49718e86f55608c")
 
     headers = {"Accept": "application/json", "X-API-KEY": api_key}
 
-    response = requests.request("GET", url, headers=headers).json()
+    response = requests.request("GET", url, headers=headers)
 
     return response
 
@@ -48,7 +48,7 @@ def get_opensea_metadata(collection, api_key="3eb775e344f14798b49718e86f55608c")
 def get_collection_assets(collection, id_col="token_id"):
 
     # work out how many loops to perform
-    metadata = get_opensea_metadata(collection=collection)
+    metadata = get_opensea_metadata(collection=collection).json()
     n_items = int(metadata["collection"]["stats"]["count"])
     n_api_calls = ceil(n_items / 50)  # calculate number of api calls we'll need to make
     print(
@@ -61,8 +61,13 @@ def get_collection_assets(collection, id_col="token_id"):
     assets = pd.DataFrame()
     for i in range(0, n_api_calls):  # change this to get more assets
         response = get_opensea_asset(offset=i, collection=collection)
-        if 'detail' in response.keys():
-            time.sleep(5)
+        #check that response is all good
+        while not response.ok:
+            time.sleep(3) #wait a bit and try again...
+            response = get_opensea_asset(offset=i, collection=collection)
+        response = response.json()
+        if 'assets' not in response.keys():
+            time.sleep(3)
             print(response)
             response = get_opensea_asset(offset=i, collection=collection)
         for asset in response["assets"]:
@@ -74,18 +79,25 @@ def get_collection_assets(collection, id_col="token_id"):
             f"{i} of {n_api_calls} API calls have been made, {assets.shape[0]} {collection}'s retrieved!"
         )
 
+    
     assets = assets.reset_index()
+    assets = assets.rename(columns={id_col:'asset_id'})
+
+
 
     # count number of traits of each apr
-    assets_traits = assets[[id_col] + traits]
+    assets_traits = assets.copy()[['asset_id'] + traits]
 
     # is id contained in string with # followed by digits
-    first_id = assets_traits[id_col][0]
-    if re.search("#\d+", first_id) is not None and isinstance(first_id, str):
+    first_id = assets_traits['asset_id'][0]
+    if re.search("#\d+", str(first_id)) is not None and isinstance(first_id, str):
         assets_traits = assets_traits.assign(
-            asset_id=lambda x: x[id_col].str.extract("(\d+)")
+            asset_id=lambda x: x['asset_id'].str.extract("(\d+)")
         )
         assets_traits["asset_id"] = pd.to_numeric(assets_traits["asset_id"])
+
+    assets['asset_id'] = assets['asset_id'].astype(int)
+
 
     assets_traits["trait_n"] = assets_traits[traits].count(axis=1)
 
@@ -125,4 +137,10 @@ def get_collection_assets(collection, id_col="token_id"):
         overwrite=True,
         database_name="mvh",
     )
+
+collections = ['bored-ape-kennel-club','cool-cats-nft','doodledogsofficial','lazy-lions','mutant-ape-yacht-club_transfers']
+
+for i in collections:
+    get_collection_assets(i)
+
 
