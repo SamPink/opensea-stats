@@ -150,6 +150,9 @@ def get_opensea(collection):
     # join apes_rarity to apes
     apes = apes.merge(apes_rarity, on="asset_id")
 
+    # drop duplicates
+    apes = apes.drop_duplicates()
+
     print(apes.head())
 
     return apes.to_dict("records")
