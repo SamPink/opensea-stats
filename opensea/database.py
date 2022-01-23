@@ -7,6 +7,12 @@ database_name = "mvh"
 url = "mongodb+srv://mvh:W1xIlKbF46rFCsiM@cluster0.ecrau.mongodb.net/mvh?authSource=admin&replicaSet=atlas-pxb4a1-shard-0&w=majority&readPreference=primary&appname=mongodb-vscode%200.7.0&retryWrites=true&ssl=true"
 
 
+def connect_mongo():
+    my_client = MongoClient(url, ssl_cert_reqs=ssl.CERT_NONE)
+    my_db = my_client[database_name]
+    return my_db
+
+
 def write_mongo(
     collection, data, overwrite=False, database_name=database_name, url=url
 ):
