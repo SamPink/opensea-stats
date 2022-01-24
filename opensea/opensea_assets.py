@@ -10,6 +10,8 @@ import re
 
 
 from database import *
+from current_listings import *
+
 
 
 def get_opensea_asset(
@@ -28,7 +30,18 @@ def get_opensea_asset(
 
     response = requests.request("GET", url, params=params, headers=headers)
 
-    return response
+    if response.ok:
+        return response.json()
+    else:
+        print(f'Timed out - request status cose ={response.status_code}. Wait 10 seconds before re-trying')
+        time.sleep(10) 
+        response = requests.request("GET", url, params=params, headers=headers)
+        if response.ok:
+            return response.json()
+        else:
+            #if still nothing, return error
+            print(f"Error in Opensea Asset API call. Status code {response.status_code}.")
+            return None
 
 
 def get_opensea_metadata(collection, api_key="3eb775e344f14798b49718e86f55608c"):
@@ -39,16 +52,28 @@ def get_opensea_metadata(collection, api_key="3eb775e344f14798b49718e86f55608c")
 
     response = requests.request("GET", url, headers=headers)
 
-    return response
+    if response.status_code == 200:
+        return response.json()
+    else:
+        #wait 10 seconds and try again
+        time.sleep(10) 
+        response = requests.request("GET", url,  headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            #if still nothing, return error
+            print(f"Error in Opensea Events API call. Status code {response.status_code}.")
+            return None
 
 
 
 
 
-def get_collection_assets(collection, id_col="token_id"):
+
+def get_collection_assets(collection, id_col="token_id",offset=0):
 
     # work out how many loops to perform
-    metadata = get_opensea_metadata(collection=collection).json()
+    metadata = get_opensea_metadata(collection=collection)
     n_items = int(metadata["collection"]["stats"]["count"])
     n_api_calls = ceil(n_items / 50)  # calculate number of api calls we'll need to make
     print(
@@ -59,13 +84,9 @@ def get_collection_assets(collection, id_col="token_id"):
     traits = list(metadata["collection"]["traits"].keys())
 
     assets = pd.DataFrame()
-    for i in range(0, n_api_calls):  # change this to get more assets
+    for i in range(offset, n_api_calls):  # change this to get more assets
         response = get_opensea_asset(offset=i, collection=collection)
         #check that response is all good
-        while not response.ok:
-            time.sleep(3) #wait a bit and try again...
-            response = get_opensea_asset(offset=i, collection=collection)
-        response = response.json()
         if 'assets' not in response.keys():
             time.sleep(3)
             print(response)
@@ -137,10 +158,3 @@ def get_collection_assets(collection, id_col="token_id"):
         overwrite=True,
         database_name="mvh",
     )
-
-collections = ['bored-ape-kennel-club','cool-cats-nft','doodledogsofficial','lazy-lions','mutant-ape-yacht-club_transfers']
-
-for i in collections:
-    get_collection_assets(i)
-
-

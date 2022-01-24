@@ -1,6 +1,7 @@
 import requests
 import pandas as pd
 import datetime as dt
+import time
 
 import os, sys
 
@@ -24,24 +25,6 @@ def sec_since_epoch(time):
     epoch = dt.datetime(1970, 1, 1, 0, 0, 0)
     return int((dt_obj - epoch).total_seconds())
 
-
-def get_opensea_asset(
-    offset=0, collection="boredapeyachtclub", api_key="3eb775e344f14798b49718e86f55608c"
-):
-
-    url = "https://api.opensea.io/api/v1/assets"
-
-    params = {
-        "collection_slug": collection,
-        "offset": offset * 50,
-        "limit": 50,
-    }
-
-    headers = {"Accept": "application/json", "X-API-KEY": api_key}
-
-    response = requests.request("GET", url, params=params, headers=headers).json()
-
-    return response
 
 
 def get_opensea_events(
@@ -90,8 +73,15 @@ def get_opensea_events(
     if response.status_code == 200:
         return response.json()
     else:
-        print(f"Error in Opensea Events API call. Status code {response.status_code}.")
-        return None
+        #wait 10 seconds and try again
+        time.sleep(10) 
+        response = requests.request("GET", url, params=params, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            #if still nothing, return error
+            print(f"Error in Opensea Events API call. Status code {response.status_code}.")
+            return None
 
 
 def update_opensea_events(
