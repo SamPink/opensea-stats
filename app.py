@@ -1,6 +1,12 @@
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 
+
+import sys
+
+# adding Folder_2 to the system path
+sys.path.insert(0, "./opensea")
+
 from database import read_mongo
 
 
