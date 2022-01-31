@@ -159,4 +159,5 @@ def get_opensea(collection):
 
 
 if __name__ == "__main__":
-    app.run_server(port=1235, debug=True)
+    server = app.server
+    app.run_server(port=8080)
