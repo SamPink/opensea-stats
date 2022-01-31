@@ -11,15 +11,13 @@ from opensea.database import read_mongo, write_mongo
 from opensea.current_listings import update_current_listings
 
 
-
-def calc_best_apegang_listing(update_listings = True):
+def calc_best_apegang_listing(update_listings=True):
 
     # do we want to update the Database
     if update_listings:
         # update apegang events
         for i in ["ape-gang", "ape-gang-old"]:
             update_current_listings(i)
-
 
     #####find listed apes
 
@@ -63,9 +61,6 @@ def calc_best_apegang_listing(update_listings = True):
         return_df=True,
     )
 
-
-
-
     ApeGang_USD = (
         read_mongo(
             "ape-gang-USD-value",
@@ -81,11 +76,15 @@ def calc_best_apegang_listing(update_listings = True):
     #
     ApeGang_USD["listing_value"] = ApeGang_USD.pred_USD / ApeGang_USD.listing_USD
 
-
     ApeGang_USD = ApeGang_USD.sort_values("listing_value", ascending=False)
 
+    # drop duplicates on asset_id
+    ApeGang_USD = ApeGang_USD.drop_duplicates(subset="asset_id")
+
     write_mongo(
-        data=ApeGang_USD, collection="ape-gang_bestvalue_opensea_listings", overwrite=True
+        data=ApeGang_USD,
+        collection="ape-gang_bestvalue_opensea_listings",
+        overwrite=True,
     )
 
     print(
