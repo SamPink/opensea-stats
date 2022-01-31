@@ -1,162 +1,77 @@
-# importing sys
-import sys
-import dash
-import dash_bootstrap_components as dbc
-from dash import Input, Output, dcc, html
+import config as cfg
 
-from pages import ape_sales, ape_stats
+import dash
+
+import sys
 
 # adding Folder_2 to the system path
 sys.path.insert(0, "./opensea")
+sys.path.insert(0, "./ML")
+
+# import dash_auth
+import dash_bootstrap_components as dbc
+
+from flask import request, jsonify
+
+from AgeGang_ML import update_ApeGang_pred_price
+from ApeGang_best_value import calc_best_apegang_listing
+from fastapi_utils.tasks import repeat_every
+from fastapi.encoders import jsonable_encoder
+
 
 from database import read_mongo
+from opensea_events import *
+from current_listings import update_current_listings
 
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-# the style arguments for the sidebar. We use position:fixed and a fixed width
-SIDEBAR_STYLE = {
-    "position": "fixed",
-    "top": 0,
-    "left": 0,
-    "bottom": 0,
-    "width": "16rem",
-    "padding": "2rem 1rem",
-    "background-color": "#f8f9fa",
-}
+# set app title
+app.title = "mvh.eth"
 
-# the styles for the main content position it to the right of the sidebar and
-# add some padding.
-CONTENT_STYLE = {
-    "margin-left": "18rem",
-    "margin-right": "2rem",
-    "padding": "2rem 1rem",
-}
+server = app.server
+
+server.config.from_object(cfg)
 
 
-sidebar = html.Div(
-    [
-        html.H2("$GANG", className="display-4"),
-        html.Hr(),
-        html.P("Ape Gang Info", className="lead"),
-        dbc.Nav(
-            [
-                dbc.NavLink("home", href="/"),
-                dbc.NavLink("sales", href="/page-1", active="exact"),
-                dbc.NavLink("stats", href="/page-2", active="exact"),
-            ],
-            vertical=True,
-            pills=True,
-        ),
-    ],
-    style=SIDEBAR_STYLE,
-)
-
-content = html.Div(id="page-content", style=CONTENT_STYLE)
-
-app.layout = html.Div(
-    [
-        dcc.Location(id="url"),
-        sidebar,
-        content,
-        dcc.Store(id="store-opensea"),
-    ]
-)
-
-
-@app.callback(Output("page-content", "children"), [Input("url", "pathname")])
-def render_page_content(pathname):
-    if pathname == "/":
-        return page_home()
-    elif pathname == "/page-1":
-        return ape_stats.layout
-    elif pathname == "/page-2":
-        return ape_sales.layout
-    # If the user tries to reach a different page, return a 404 message
-    return html.H1("FUCK")
-
-
-def page_home():
-    return html.Div(
-        [
-            html.H1("Hello World"),
-            dcc.Dropdown(
-                id="dropdown-collection",
-                options=[
-                    {"label": "Ape Gang", "value": "ape-gang"},
-                    {"label": "BAYC", "value": "boredapeyachtclub"},
-                ],
-                style={"width": "50%"},
-            ),
-        ]
-    )
-
-
-# create a callback for the dropdown
-@app.callback(
-    Output("store-opensea", "data"),
-    [Input("dropdown-collection", "value")],
-)
-def get_opensea(collection):
-    if collection is None:
-        return None
-    print(collection)
-    query_sort = [("time", -1)]
-
-    projection = {
-        "_id": 0,
-        "asset_id": 1,
-        "image_url": 1,
-        "sale_price": 1,
-        "buyer_wallet": 1,
-        "time": 1,
+@server.route("/api/sales/<collection>")
+def AG_sales(collection, n_top_results=10, sale_min=0):
+    query = {
+        "sale_price": {"$gte": sale_min},
+        "sale_currency": {"$in": ["ETH", "WETH"]},
     }
 
-    apes = read_mongo(
-        f"{collection}_sales",
+    if collection == "ape-gang":
+        AG_old = read_mongo(
+            "ape-gang-old_sales",
+            query_filter=query,
+            return_df=True,
+            query_limit=n_top_results,
+            query_sort=[("time", -1)],
+        )
+        AG_new = read_mongo(
+            "ape-gang_sales",
+            query_filter=query,
+            return_df=True,
+            query_limit=n_top_results,
+            query_sort=[("time", -1)],
+        )
+        AG_sales = (
+            AG_old.append(AG_new)
+            .sort_values("time", ascending=False)
+            .fillna("")
+            .head(n_top_results)
+            .to_dict(orient="records")
+        )
+
+        return jsonify(AG_sales)
+
+    sales = read_mongo(
+        collection=f"{collection}_sales",
+        query_filter=query,
         return_df=True,
-        query_projection=projection,
-        query_limit=1000,
-        query_sort=query_sort,
+        query_limit=n_top_results,
+        query_sort=[("time", -1)],
     )
-    print(apes.head())
-    """ apes_old = read_mongo(
-        "ape-gang-old_sales",
-        return_df=True,
-        query_projection=projection,
-        query_limit=1000,
-        query_sort=query_sort,
-    ) """
-    # apes = apes.append(apes_old)
+    x = sales.sort_values("time", ascending=False).fillna("").to_dict(orient="records")
 
-    # it seems read mongo cant filter on a list, why it do dis?
-    # ape_ids = apes.asset_id.unique().tolist()
-
-    apes_rarity = read_mongo(
-        f"{collection}_traits",
-        return_df=True,
-        # query_filter={"asset_id": {"$in": ape_ids}},
-    )
-    print(apes_rarity.head())
-
-    """ ApeGang_USD = read_mongo(
-        "ape-gang-USD-value",
-        query_projection=["asset_id", "pred_USD", "pred_USD_price_diff"],
-        return_df=True,
-    ) """
-
-    # join Apes and ApeGang_USD
-    # apes = apes.merge(ApeGang_USD, on="asset_id")
-
-    # join apes_rarity to apes
-    apes = apes.merge(apes_rarity, on="asset_id")
-
-    # drop duplicates
-    apes = apes.drop_duplicates()
-
-    print(apes.head())
-
-    return apes.to_dict("records")
-
-
-if __name__ == "__main__":
-    app.run_server(port=1235, debug=True)
+    return jsonify(x)
