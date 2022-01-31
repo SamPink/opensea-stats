@@ -1,1 +1,1 @@
-web: uvicorn ./dashApp/index:app --host=0.0.0.0 --port=${PORT:-5000}
+web: uvicorn --pythonpath dashApp app:server --host=0.0.0.0 --port=${PORT:-5000}   z
