@@ -1,4 +1,7 @@
 from fastapi import FastAPI
+from ML.AgeGang_ML import update_ApeGang_pred_price
+from ML.ApeGang_best_value import calc_best_apegang_listing
+from fastapi_utils.tasks import repeat_every
 from fastapi.encoders import jsonable_encoder
 
 
@@ -8,10 +11,29 @@ import sys
 sys.path.insert(0, "./opensea")
 
 from database import read_mongo
+from opensea_events import *
+from current_listings import update_current_listings
 
-# test
-#test
+
+
 app = FastAPI()
+
+@app.on_event("startup")
+@repeat_every(seconds=60 * 60 *6)  #repeat every 6 hours
+def update_price_pred():
+    print('updating ApeGang Predicted price')
+    update_ApeGang_pred_price()
+
+
+@app.on_event("startup")
+@repeat_every(seconds=60 * 5)  #repeat 5 mins
+def update_events():
+    nfts = ['ape-gang','ape-gang-old','boredapeyachtclub','toucan-gang']
+    for x in nfts:
+        print(f"updating {x} events")
+        update_opensea_events(collection=x)
+    print('update apegang best listings')
+    calc_best_apegang_listing(update_listings=False)
 
 
 @app.get("/")
@@ -42,5 +64,34 @@ async def AG_best_listings(n_top_results: int):
         return_df=True,
     )
     x = x.fillna("").to_dict(orient="records")
+
+    return jsonable_encoder(x)
+
+@app.get("/ApeGang-Sales/")
+async def AG_sales(sale_min: int):
+    AG_query = {'sale_price':{'$gte':sale_min},
+                'sale_currency':{'$in':['ETH','WETH']}}
+    AG_old = read_mongo('ape-gang-old_sales',query_filter=AG_query,return_df=True)
+    AG_new = read_mongo('ape-gang-old_sales',query_filter=AG_query,return_df=True)
+    AG_sales = AG_old.append(AG_new).sort_values('time', ascending=False).fillna("").to_dict(orient="records")
+
+    return jsonable_encoder(AG_sales)
+
+@app.get("/Toucan-Sales/")
+async def Toucan_sales(sale_min: int):
+    query = {'sale_price':{'$gte':sale_min},
+                'sale_currency':{'$in':['ETH','WETH']}}
+    toucans = read_mongo('toucan-gang_sales',query_filter=query,return_df=True)
+    x=toucans.sort_values('time', ascending=False).fillna("").to_dict(orient="records")
+
+    return jsonable_encoder(x)
+
+
+@app.get("/BAYC-Sales/")
+async def BAYC_sales(sale_min: int):
+    query = {'sale_price':{'$gte':sale_min},
+                'sale_currency':{'$in':['ETH','WETH']}}
+    BAYC = read_mongo('boredapeyachtclub_sales',query_filter=query,return_df=True)
+    x=BAYC.sort_values('time', ascending=False).fillna("").to_dict(orient="records")
 
     return jsonable_encoder(x)
