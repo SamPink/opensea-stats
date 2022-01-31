@@ -23,7 +23,7 @@ def write_mongo(
         data ([dataframe or list of dict]): [description]
         overwrite (bool, optional): [description]. Defaults to False.
     """
-    my_client = MongoClient(url, ssl_cert_reqs=ssl.CERT_NONE)
+    my_client = MongoClient(url)
     my_db = my_client[database_name]
     my_collection = my_db[collection]
 
@@ -77,7 +77,7 @@ def read_mongo(
     return_df=False,
 ):
 
-    my_client = MongoClient(url, ssl_cert_reqs=ssl.CERT_NONE)
+    my_client = MongoClient(url)
     my_db = my_client[database_name]
     if collection not in my_db.list_collection_names():
         print(
