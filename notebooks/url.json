@@ -1,3 +1,4 @@
 {
-    "url": "https://opensea-stats.herokuapp.com/docs"
+    "url": "https://opensea-stats.herokuapp.com/docs",
+    "marketplace": "https://opensea-dash.herokuapp.com/apes-best-listings"
 }

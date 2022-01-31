@@ -37,10 +37,24 @@ def page_best_listings():
     # join rarity to df
     df = df.merge(apes_rarity, on="asset_id", how="left")
 
+    ETH_USD = read_mongo(
+        "eth-usd",
+        return_df=True,
+        query_sort=[("time", -1)],
+        query_limit=1,
+    )
+
+    df["listing_eth"] = df.listing_USD / ETH_USD["eth-usd-rate"].item()
+    df["pred_eth"] = df.pred_USD / ETH_USD["eth-usd-rate"].item()
+
     # return html.Div([ape_card(df.iloc[[0]])])
     return html.Div(
         [
-            html.H1("Hello World"),
+            html.H1("Best Apes Listed"),
+            dbc.Alert(
+                "ETH value is currently wrong as we are converting at time of listing ",
+                color="warning",
+            ),
             html.H2(id="title"),
             html.Div(
                 dbc.Row([ape_card_listing(df.iloc[[i]]) for i in range(df.shape[0])])
@@ -60,9 +74,11 @@ def ape_card_listing(ape):
             dbc.CardBody(
                 [
                     html.H4(f"Ape {ape.asset_id.item()}"),
-                    html.P(f"Listing Price: {ape.listing_USD.item()}"),
-                    html.P(f"predicted price: {ape.pred_USD.item()}"),
+                    html.P(f"Listing Price: {round(ape.listing_eth.item())}"),
+                    html.P(f"Listing Price USD: {round(ape.listing_USD.item())}"),
+                    html.P(f"predicted price: {round(ape.pred_eth.item())}"),
                     html.P(f"Rarity: {ape.rarity_rank_y.item()}"),
+                    dbc.CardLink("Opensea listing", href=ape.permalink.item()),
                 ]
             ),
         ],
