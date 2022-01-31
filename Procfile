@@ -1,1 +1,1 @@
-web: uvicorn app:server --app-dir dashApp --host=0.0.0.0 --port=${PORT:-5000}
+web: gunicorn dashApp.index:server
