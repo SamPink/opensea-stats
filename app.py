@@ -32,7 +32,7 @@ server = app.server
 
 server.config.from_object(cfg)
 
-""" 
+
 @server.route("/api/sales/<collection>")
 def AG_sales(collection, n_top_results=10, sale_min=0):
     query = {
@@ -75,4 +75,4 @@ def AG_sales(collection, n_top_results=10, sale_min=0):
     x = sales.sort_values("time", ascending=False).fillna("").to_dict(orient="records")
 
     return jsonify(x)
- """
+
