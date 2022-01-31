@@ -98,3 +98,7 @@ def calc_best_apegang_listing(update_listings=True):
             ]
         ]
     )
+
+
+
+calc_best_apegang_listing(update_listings=False)
