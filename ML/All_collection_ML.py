@@ -63,7 +63,8 @@ for x in collections:
     traits_x['trait_n'] = traits_x['trait_n']/traits_x['trait_n'].max()
 
 
-    cols_2_keep = ['asset_id','collection','trait_n','mean_rarity','max_rarity','min_rarity',
+    cols_2_keep = ['asset_id','collection','trait_n','trait_n_rarity',
+                    'mean_rarity','max_rarity','min_rarity',
                     'factoral_rarity','rarity_rank']
 
 
@@ -72,7 +73,7 @@ for x in collections:
 
 sales = sales[sales.sale_price > 0.0001]
 #convert price to dollars
-sales['sale_minute'] =  sales["time"].dt.floor("min")
+sales['sale_minute'] =  sales["time"].dt.floor("h")
 sales = sales.drop(columns="time")
 latest_ETH_update = read_mongo(
     "eth-usd",
@@ -88,38 +89,54 @@ ETH_USD = read_mongo(
     return_df=True,
     query_filter={"time": {"$in": sales.sale_minute.to_list()}},
 )
+print(sales[(sales.collection == 'boredapeyachtclub') & (sales.asset_id == 9485)& (sales.sale_price==45)])
+
 sales = sales.merge(ETH_USD, how="left", left_on="sale_minute", right_on="time")
 sales["sale_USD"] = sales['sale_price']
 ETH_sale = sales.sale_currency.isin(['WETH','ETH'])
 #if sales are in ETH, convert USD price
 sales.loc[ETH_sale,'sale_USD'] = sales.loc[ETH_sale,"sale_price"] * sales.loc[ETH_sale,"eth-usd-rate"]
 
+#make all apegang 
+AG_new = sales.collection =='ape-gang'
+sales.loc[AG_new,'collection'] = 'ape-gang-old'
+
 #calculate rolling average price per collection
 sales['collection_rolling_ave_USD'] = np.nan
 
 sales = sales.sort_values(by=["collection","sale_minute"]).reset_index(drop=True)
-for x in collections:
+for x in sales.collection.unique():
     df = sales[sales.collection==x]
     rolling_average_USD = (df["sale_USD"].rolling(window=100, center=True).median() )
-    first50 = df.index[0:50]
-    last50 = df.index[-49:]
-    last200 = df.index[-199:]
+
 
     # first 50 sales are NA - so replace with expanding median
-    rolling_average_USD.iloc[first50] = (
+    rolling_average_USD.iloc[0:50] = (
         df["sale_USD"].iloc[0:50].expanding().median()
     )
 
     # last 50 sales will also be NA, as we used centre = TRUE
     # so recalculate with centre = FALSE
-    rolling_average_USD.iloc[last50] = (
-        sales["sale-USD"].iloc[last200].rolling(100, center=False).median().iloc[last50]
+    rolling_average_USD.iloc[-49:] = (
+        df["sale_USD"].iloc[-151:].rolling(100, center=False).median().iloc[-49:]
     )
 
     sales['collection_rolling_ave_USD'].iloc[df.index] = rolling_average_USD
+    thingy = rolling_average_USD.isna().sum()
+    print(f"collection = {x}, and has {thingy} NAs")
 
-sales.head()
-sales.shape
+traits['asset_id'] = pd.to_numeric(traits['asset_id'])
+df = sales.merge(traits, on=['collection','asset_id'],how='inner')
+df.shape[0]
 
+from scipy.stats import pearsonr
+price_perc = df.sale_USD/df.collection_rolling_ave_USD
+df = df[price_perc >0.2]
+price_perc = price_perc[price_perc >0.2]
 
+corr = pearsonr(df.factoral_rarity, price_perc)
+
+import plotly.express as px
+fig = px.scatter(x=df.factoral_rarity, y = price_perc)
+fig.show()
 
