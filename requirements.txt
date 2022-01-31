@@ -12,3 +12,4 @@ sklearn
 dash
 plotly
 dash_bootstrap_components
+matplotlib
