@@ -24,4 +24,4 @@ for collect in collection:
         if not db["asset_id"].dtype == "int64":
             db["asset_id"] = db["asset_id"].astype(int)
 
-            write_mongo(collect, db, overwrite=True)
+        write_mongo(collect, db, overwrite=True)

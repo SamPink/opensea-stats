@@ -1,7 +1,8 @@
 {
     "python.analysis.extraPaths": [
         "..",
-        "./opensea"
+        "./opensea",
+        "./ML"
     ],
     "python.linting.pylintEnabled": false,
     "python.linting.pycodestyleEnabled": false,
