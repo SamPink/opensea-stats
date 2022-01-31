@@ -4,7 +4,7 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import Input, Output, dcc, html
 
-from pages import ape_sales, ape_stats
+from pages import ape_sales, ape_stats, best_apes_listed
 
 # adding Folder_2 to the system path
 sys.path.insert(0, "./opensea")
@@ -43,6 +43,9 @@ sidebar = html.Div(
                 dbc.NavLink("home", href="/"),
                 dbc.NavLink("sales", href="/page-1", active="exact"),
                 dbc.NavLink("stats", href="/page-2", active="exact"),
+                dbc.NavLink(
+                    "best Ape Gang listings", href="/apes-best-listings", active="exact"
+                ),
             ],
             vertical=True,
             pills=True,
@@ -71,6 +74,8 @@ def render_page_content(pathname):
         return ape_stats.layout
     elif pathname == "/page-2":
         return ape_sales.layout
+    elif pathname == "/apes-best-listings":
+        return best_apes_listed.page_best_listings()
     # If the user tries to reach a different page, return a 404 message
     return html.H1("FUCK")
 
@@ -160,4 +165,4 @@ def get_opensea(collection):
 
 if __name__ == "__main__":
     server = app.server
-    app.run_server(port=8080)
+    app.run_server(port=1234)
