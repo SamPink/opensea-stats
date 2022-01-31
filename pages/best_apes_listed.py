@@ -55,6 +55,10 @@ def page_best_listings():
                 "ETH value is currently wrong as we are converting at time of listing and ETH has gone down since then :( ",
                 color="warning",
             ),
+            dbc.Alert(
+                "Opensea url only points to Ape Gang old currently",
+                color="warning",
+            ),
             html.H2(id="title"),
             html.Div(
                 dbc.Row([ape_card_listing(df.iloc[[i]]) for i in range(df.shape[0])])
