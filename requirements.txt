@@ -1,6 +1,7 @@
 fastapi
 flask
 uvicorn[standard]
+gunicorn
 black
 motor
 pymongo
