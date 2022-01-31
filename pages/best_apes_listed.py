@@ -52,7 +52,7 @@ def page_best_listings():
         [
             html.H1("Best Apes Listed"),
             dbc.Alert(
-                "ETH value is currently wrong as we are converting at time of listing ",
+                "ETH value is currently wrong as we are converting at time of listing and ETH has gone down since then :( ",
                 color="warning",
             ),
             html.H2(id="title"),
@@ -74,9 +74,9 @@ def ape_card_listing(ape):
             dbc.CardBody(
                 [
                     html.H4(f"Ape {ape.asset_id.item()}"),
-                    html.P(f"Listing Price: {round(ape.listing_eth.item())}"),
-                    html.P(f"Listing Price USD: {round(ape.listing_USD.item())}"),
-                    html.P(f"predicted price: {round(ape.pred_eth.item())}"),
+                    html.P(f"Listing Price: {ape.listing_eth.item()}"),
+                    html.P(f"Listing Price USD: {ape.listing_USD.item()}"),
+                    html.P(f"predicted price: {ape.pred_eth.item()}"),
                     html.P(f"Rarity: {ape.rarity_rank_y.item()}"),
                     dbc.CardLink("Opensea listing", href=ape.permalink.item()),
                 ]
