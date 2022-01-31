@@ -78,7 +78,7 @@ def query_builder(query_filter, query_projection, query_sort, query_limit):
 
 
 @app.get("/ApeGang-Sales/")
-async def AG_sales(sale_min: float):
+async def AG_sales(sale_min: float, n_top_results: int):
     AG_query = {
         "sale_price": {"$gte": sale_min},
         "sale_currency": {"$in": ["ETH", "WETH"]},
@@ -88,21 +88,21 @@ async def AG_sales(sale_min: float):
         "ape-gang-old_sales",
         query_filter=AG_query,
         return_df=True,
-        query_limit=100,
+        query_limit=n_top_results,
         query_sort=[("time", -1)],
     )
     AG_new = read_mongo(
         "ape-gang_sales",
         query_filter=AG_query,
         return_df=True,
-        query_limit=100,
+        query_limit=n_top_results,
         query_sort=[("time", -1)],
     )
     AG_sales = (
         AG_old.append(AG_new)
         .sort_values("time", ascending=False)
         .fillna("")
-        .head(100)
+        .head(n_top_results)
         .to_dict(orient="records")
     )
 
@@ -110,13 +110,19 @@ async def AG_sales(sale_min: float):
 
 
 @app.get("/Toucan-Sales/")
-async def Toucan_sales(sale_min: float):
+async def Toucan_sales(sale_min: float, n_top_results: int):
     query = {
         "sale_price": {"$gte": sale_min},
         "sale_currency": {"$in": ["ETH", "WETH"]},
     }
 
-    toucans = read_mongo("toucan-gang_sales", query_filter=query, return_df=True)
+    toucans = read_mongo(
+        "toucan-gang_sales",
+        query_filter=query,
+        return_df=True,
+        query_limit=n_top_results,
+        query_sort=[("time", -1)],
+    )
     x = (
         toucans.sort_values("time", ascending=False)
         .fillna("")
@@ -127,13 +133,19 @@ async def Toucan_sales(sale_min: float):
 
 
 @app.get("/BAYC-Sales/")
-async def BAYC_sales(sale_min: float):
+async def BAYC_sales(sale_min: float, n_top_results: int):
     query = {
         "sale_price": {"$gte": sale_min},
         "sale_currency": {"$in": ["ETH", "WETH"]},
     }
 
-    BAYC = read_mongo("boredapeyachtclub_sales", query_filter=query, return_df=True)
+    BAYC = read_mongo(
+        "boredapeyachtclub_sales",
+        query_filter=query,
+        return_df=True,
+        query_limit=n_top_results,
+        query_sort=[("time", -1)],
+    )
     x = BAYC.sort_values("time", ascending=False).fillna("").to_dict(orient="records")
 
     return jsonable_encoder(x)
