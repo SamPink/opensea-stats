@@ -250,8 +250,6 @@ def train_ApeGangML(
     return rf
 
 
-model = train_ApeGangML(test_split=0.25, n_trees=1500, update_opensea_events=False)
-
 
 def update_ApeGang_pred_price():
 
