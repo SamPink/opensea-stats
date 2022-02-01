@@ -56,7 +56,9 @@ def calc_current_ApeGang_median_price(last_n_sales=100):
     )
     sales = sales.merge(ETH_USD, how="left", left_on="sale_min", right_on="time")
     sales["usd_price"] = sales["sale_price"] * sales["eth-usd-rate"]
-    USD_average = sales["usd_price"].rolling(last_n_sales).median().iloc[-1]
+    USD_average = (
+        sales["usd_price"].rolling(last_n_sales, min_periods=1).median().iloc[-1]
+    )
     return USD_average
 
 
@@ -248,7 +250,6 @@ def train_ApeGangML(
     write_mongo("ape-gang-USD-value", pred_USD, overwrite=True)
 
     return rf
-
 
 
 def update_ApeGang_pred_price():
