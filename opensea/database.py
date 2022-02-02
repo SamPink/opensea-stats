@@ -62,7 +62,7 @@ def write_mongo(
 
             return "inserted"
         except Exception as e:
-            return "duplicate"
+            return e
 
 
 def read_mongo(
