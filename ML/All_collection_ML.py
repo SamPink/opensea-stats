@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime as dt
 import re
+import time
 
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import StandardScaler
@@ -25,8 +26,9 @@ sys.path.append(parentdir)
 
 from opensea.database import read_mongo, write_mongo,connect_mongo
 from opensea.cryto_prices import update_eth_usd
-from opensea.current_listings import update_current_listings
+from opensea.opensea_assets import get_collection_assets
 from opensea.opensea_events import update_opensea_events
+
 
 
 
@@ -36,11 +38,29 @@ sales_regex = re.compile('.*_sales')
 sales_collections = list(filter(sales_regex.match, db_collections))
 collection_with_sales = [re.sub('_sales','',i) for i in sales_collections]
 
+
+
 traits_regex = re.compile('.*_traits')
 traits_collections = list(filter(traits_regex.match, db_collections))
 collection_with_traits = [re.sub('_traits','',i) for i in traits_collections]
 
-collections = list(set.intersection(set(collection_with_sales),set(collection_with_traits)))
+
+"""missing_traits = list(set(collection_with_sales) - set(collection_with_traits))
+for i in missing_traits:
+    get_collection_assets(i)
+    time.sleep(60)
+    update_opensea_events(i,eventTypes=["sales"])
+    time.sleep(60)
+    update_opensea_events(i,eventTypes=["sales"],
+                          find_firstUpdated_from_DB=True, find_lastUpdated_from_DB=False)"""
+
+
+database = connect_mongo()
+db_collections2 = database.collection_names(include_system_collections=False)
+traits_collections2 = list(filter(traits_regex.match, db_collections2))
+collection_with_traits2 = [re.sub('_traits','',i) for i in traits_collections2]
+
+collections = list(set.intersection(set(collection_with_sales),set(collection_with_traits2)))
 
 
 sales = pd.DataFrame()
@@ -134,9 +154,25 @@ price_perc = df.sale_USD/df.collection_rolling_ave_USD
 df = df[price_perc >0.2]
 price_perc = price_perc[price_perc >0.2]
 
-corr = pearsonr(df.factoral_rarity, price_perc)
+
+
+
+x = df[['collection_rolling_ave_USD', 'trait_n_rarity', 'mean_rarity', 'max_rarity', 'min_rarity',
+                'factoral_rarity', 'rarity_rank']]
+
+y= df['sale_USD']
+
+X_train, X_test, y_train, y_test = train_test_split(
+    x, y, test_size=0.15, random_state=42
+)
+
+rf_reg = RandomForestRegressor()
+
+rf_reg.fit(X_train, y_train)
+y_pred = rf_reg.predict(X_test)
+
+mae = mean_absolute_error(y_test, y_pred)
 
 import plotly.express as px
-fig = px.scatter(x=df.factoral_rarity, y = price_perc)
-fig.show()
-
+p =  px.scatter(x=y_test, y = y_pred,opacity =0.2,  trendline="lowess")
+p.show()

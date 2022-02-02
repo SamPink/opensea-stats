@@ -8,9 +8,13 @@ from math import ceil
 import numpy as np
 import re
 
+import os, sys
 
-from database import *
-from current_listings import *
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+from opensea.database import *
+from opensea.current_listings import *
 
 
 
