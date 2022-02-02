@@ -176,3 +176,6 @@ mae = mean_absolute_error(y_test, y_pred)
 import plotly.express as px
 p =  px.scatter(x=y_test, y = y_pred,opacity =0.2,  trendline="lowess")
 p.show()
+
+import joblib
+joblib.dump(rf_reg, 'All_Collection_ML.joblib')
