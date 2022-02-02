@@ -44,6 +44,10 @@ def calc_best_apegang_listing(update_listings=True):
     # merge new and old collections together
     AG_listed = ape_gang_new_listed.append(ape_gang_old_listed)
 
+    # drop duplicates on asset_id
+    # TODO why dis happen
+    AG_listed = AG_listed.drop_duplicates(subset="asset_id")
+
     # download ape trait info
     apes = read_mongo(
         "ape-gang-old_traits",

@@ -21,9 +21,20 @@ def page_best_listings():
 
     df = read_mongo(
         collection="ape-gang_bestvalue_opensea_listings",
-        query_limit=30,
+        query_limit=100,
         return_df=True,
-    )
+    )[
+        [
+            "asset_id",
+            "pred_USD",
+            "collection",
+            "listing_currency",
+            "listing_price",
+            "listing_ending",
+            "listing_USD",
+            "listing_value",
+        ]
+    ]
 
     # get asset ids
     ape_ids = df["asset_id"].tolist()
@@ -33,6 +44,8 @@ def page_best_listings():
         return_df=True,
         query_filter={"asset_id": {"$in": ape_ids}},
     )
+
+    # get unique number of traits
 
     # join rarity to df
     df = df.merge(apes_rarity, on="asset_id", how="left")
@@ -68,7 +81,17 @@ def page_best_listings():
 
 
 def ape_card_listing(ape):
-    print(ape.info())
+    if ape.collection.item() == "ape-gang-old":
+        link = dbc.CardLink("Opensea listing", href=ape.permalink.item())
+    else:
+        link = html.P("Listed on ape gang new")
+
+    # round pred_eth up to nearest 0.01
+    pred_eth = round(ape.pred_eth.item(), 2)
+
+    # round listing_eth up to nearest 0.01
+    listing_eth = round(ape.listing_eth.item(), 2)
+
     return dbc.Card(
         [
             dbc.CardImg(
@@ -78,11 +101,10 @@ def ape_card_listing(ape):
             dbc.CardBody(
                 [
                     html.H4(f"Ape {ape.asset_id.item()}"),
-                    html.P(f"Listing Price: {ape.listing_eth.item()}"),
-                    html.P(f"Listing Price USD: {ape.listing_USD.item()}"),
-                    html.P(f"predicted price: {ape.pred_eth.item()}"),
-                    html.P(f"Rarity: {ape.rarity_rank_y.item()}"),
-                    dbc.CardLink("Opensea listing", href=ape.permalink.item()),
+                    html.P(f"Listing Price {listing_eth} ETH"),
+                    html.P(f"Predicted Price: {pred_eth} ETH"),
+                    html.P(f"Rarity: {ape.rarity_rank.item()}"),
+                    link,
                 ]
             ),
         ],
