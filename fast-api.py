@@ -4,6 +4,7 @@ from ML.ApeGang_best_value import calc_best_apegang_listing
 from fastapi_utils.tasks import repeat_every
 from fastapi.encoders import jsonable_encoder
 
+import uvicorn
 
 import sys
 
@@ -149,3 +150,7 @@ async def BAYC_sales(sale_min: float, n_top_results: int):
     x = BAYC.sort_values("time", ascending=False).fillna("").to_dict(orient="records")
 
     return jsonable_encoder(x)
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
