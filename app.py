@@ -24,6 +24,7 @@ sys.path.insert(0, "./opensea")
 
 from current_listings import update_current_listings
 from database import read_mongo
+from opensea_collections import all_collection_names, all_collections_with_traits
 
 # set app title
 app.title = "mvh.eth"
@@ -35,13 +36,16 @@ app.title = "mvh.eth"
 @repeat_every(seconds=60 * 60 * 6)  # repeat every 6 hours
 def update_price_pred():
     print("updating ApeGang Predicted price")
-    update_ApeGang_pred_price()
+    # update_ApeGang_pred_price()
 
 
 @app.on_event("startup")
-@repeat_every(seconds=60 * 5)  # repeat 5 mins
+@repeat_every(seconds=60 * 10)  # repeat 10 mins
 def update_events():
-    nfts = ["ape-gang", "ape-gang-old", "boredapeyachtclub", "toucan-gang"]
+    print("yeet, here i am")
+    nfts = all_collection_names()
+    # nfts = ["ape-gang", "ape-gang-old", "boredapeyachtclub", "toucan-gang"]
+    print((nfts))
     for x in nfts:
         print(f"updating {x} events")
         update_opensea_events(collection=x)
@@ -182,3 +186,7 @@ async def sales(collection: str, sale_min: float, n_top_results: int):
     x = sales.sort_values("time", ascending=False).fillna("").to_dict(orient="records")
 
     return jsonable_encoder(x)
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
