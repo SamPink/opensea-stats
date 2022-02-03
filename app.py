@@ -12,6 +12,7 @@ from dash import dcc, html
 import dash_bootstrap_components as dbc
 
 from createdash import create_app
+from opensea_events import update_opensea_events
 
 app = FastAPI()
 dash_app = create_app()
