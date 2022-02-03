@@ -155,7 +155,3 @@ async def BAYC_sales(sale_min: float, n_top_results: int):
     x = BAYC.sort_values("time", ascending=False).fillna("").to_dict(orient="records")
 
     return jsonable_encoder(x)
-
-
-if __name__ == "__main__":
-    uvicorn.run(app, port=1234)
