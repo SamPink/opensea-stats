@@ -11,12 +11,19 @@ import dash
 from dash import dcc, html
 import dash_bootstrap_components as dbc
 
-from index import create_app
+from createdash import create_app
 
 app = FastAPI()
 dash_app = create_app()
 
 app.mount("/dash", WSGIMiddleware(dash_app.server))
+import sys
+
+# adding Folder_2 to the system path
+sys.path.insert(0, "./opensea")
+
+from current_listings import update_current_listings
+from database import read_mongo
 
 # set app title
 app.title = "mvh.eth"
@@ -153,5 +160,25 @@ async def BAYC_sales(sale_min: float, n_top_results: int):
         query_sort=[("time", -1)],
     )
     x = BAYC.sort_values("time", ascending=False).fillna("").to_dict(orient="records")
+
+    return jsonable_encoder(x)
+
+
+# create an endpoint to get sales for a given collection
+@app.get("/sales/{collection}")
+async def sales(collection: str, sale_min: float, n_top_results: int):
+    query = {
+        "sale_price": {"$gte": sale_min},
+        "sale_currency": {"$in": ["ETH", "WETH"]},
+    }
+
+    sales = read_mongo(
+        f"{collection}_sales",
+        query_filter=query,
+        return_df=True,
+        query_limit=n_top_results,
+        query_sort=[("time", -1)],
+    )
+    x = sales.sort_values("time", ascending=False).fillna("").to_dict(orient="records")
 
     return jsonable_encoder(x)
