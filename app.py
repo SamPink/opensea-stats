@@ -46,10 +46,10 @@ def update_events():
     calc_best_apegang_listing(update_listings=True)
     nfts = all_collection_names()
     # nfts = ["ape-gang", "ape-gang-old", "boredapeyachtclub", "toucan-gang"]
-    for x in nfts:
+    ''' for x in nfts:
         print(f"updating {x} events")
         update_opensea_events(collection=x)
-    print("update apegang best listings")
+    print("update apegang best listings") '''
     
 
 
