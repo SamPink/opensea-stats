@@ -267,6 +267,9 @@ def update_ApeGang_pred_price():
 
     average_USD = calc_current_ApeGang_median_price()
 
+    #drop duplicates on asset_id
+    price_diff_df = price_diff_df.drop_duplicates(subset="asset_id")
+    
     price_diff_df["pred_USD"] = average_USD + price_diff_df["pred_USD_price_diff"]
     write_mongo("ape-gang-USD-value", price_diff_df, overwrite=True)
 

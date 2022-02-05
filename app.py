@@ -37,7 +37,7 @@ app.title = "mvh.eth"
 @repeat_every(seconds=60 * 60 * 6)  # repeat every 6 hours
 def update_price_pred():
     print("updating ApeGang Predicted price")
-    # update_ApeGang_pred_price()
+    update_ApeGang_pred_price()
 
 
 @app.on_event("startup")
@@ -51,7 +51,7 @@ def update_events():
         print(f"updating {x} events")
         update_opensea_events(collection=x)
     print("update apegang best listings")
-    calc_best_apegang_listing(update_listings=False)
+    calc_best_apegang_listing(update_listings=True)
 
 
 @app.get("/")
