@@ -43,15 +43,14 @@ def update_price_pred():
 @app.on_event("startup")
 @repeat_every(seconds=60 * 10)  # repeat 10 mins
 def update_events():
-    print("yeet, here i am")
+    calc_best_apegang_listing(update_listings=True)
     nfts = all_collection_names()
     # nfts = ["ape-gang", "ape-gang-old", "boredapeyachtclub", "toucan-gang"]
-    print((nfts))
     for x in nfts:
         print(f"updating {x} events")
         update_opensea_events(collection=x)
     print("update apegang best listings")
-    calc_best_apegang_listing(update_listings=True)
+    
 
 
 @app.get("/")
