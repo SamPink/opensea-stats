@@ -72,6 +72,24 @@ def get_opensea_events(
 
     if response.status_code == 200:
         return response.json()
+    elif response.status_code == 429:
+        #loop until we get a 200
+        count = 0
+        while response.status_code == 429:
+            count += 1
+            time.sleep(10)
+            
+            response = requests.request("GET", url, params=params, headers=headers)
+            
+            #if we get a 200, return the json
+            if response.status_code == 200:
+                return response.json()
+            
+            #if count > 20, raise an error
+            if count > 20:
+                raise ValueError(
+                    "Too many 429 errors. Please check your API key and try again."
+                )
     else:
         #wait 10 seconds and try again
         time.sleep(10) 
