@@ -5,7 +5,7 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import Input, Output, dcc, html
 
-from pages import ape_sales, ape_stats, best_apes_listed
+from pages import ape_sales, predicted_value, best_apes_listed
 
 import uvicorn
 from database import read_mongo
@@ -19,7 +19,7 @@ from ML.ApeGang_best_value import calc_best_apegang_listing
 # adding Folder_2 to the system path
 sys.path.insert(0, "./opensea")
 
-from opensea_collections import all_collection_names
+from opensea_collections import all_collection_names, all_collections_with_pred_price
 
 from current_listings import update_current_listings
 from database import read_mongo
@@ -59,12 +59,14 @@ def create_app():
             dbc.Nav(
                 [
                     dbc.NavLink("home", href="/"),
-                    dbc.NavLink("sales", href="/page-1", active="exact"),
-                    dbc.NavLink("stats", href="/page-2", active="exact"),
+                    dbc.NavLink("Sales history", href="/sales-history", active="exact"),
                     dbc.NavLink(
                         "best Ape Gang listings",
                         href="/apes-best-listings",
                         active="exact",
+                    ),
+                    dbc.NavLink(
+                        "predicted value", href="/predicted-value", active="exact"
                     ),
                 ],
                 vertical=True,
@@ -90,9 +92,9 @@ def create_app():
     def render_page_content(pathname):
         if pathname == "/":
             return page_home()
-        elif pathname == "/page-1":
-            return ape_stats.layout
-        elif pathname == "/page-2":
+        elif pathname == "/predicted-value":
+            return predicted_value.layout
+        elif pathname == "/sales-history":
             return ape_sales.layout
         elif pathname == "/apes-best-listings":
             return best_apes_listed.page_best_listings()
@@ -100,7 +102,7 @@ def create_app():
         return html.H1("FUCK")
 
     def page_home():
-        all_collections = all_collection_names()
+        all_collections = all_collections_with_pred_price()
 
         # create a options list for the dropdown
         options = [
@@ -143,6 +145,10 @@ def create_app():
             query_limit=10000,
             query_sort=[("time", -1)],
         ).drop_duplicates(subset=["asset_id"])
+
+        if sales is None or sales.empty:
+            print(f"No sales data for {collection}")
+            return None
 
         value = read_mongo(
             f"{collection}_predicted_USD",
