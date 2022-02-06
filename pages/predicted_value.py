@@ -43,7 +43,7 @@ layout = html.Div(
 
 @callback(
     Output("card-container", "children"),
-    [Input("store-opensea-sales", "data"), Input("dropdown", "value")],
+    [Input("store-predicted-value", "data"), Input("dropdown", "value")],
 )
 def update_output(opensea_data, value):
     if opensea_data is None:
@@ -64,16 +64,12 @@ def ape_card(ape):
     return dbc.Card(
         [
             dbc.CardImg(
-                src=ape.image_url.item(),
+                # src=ape.image_url.item(),
                 top=True,
             ),
             dbc.CardBody(
                 [
                     html.H4(f"Ape {ape.asset_id.item()}"),
-                    html.P(f"Sale Price ETH: {ape.sale_price.item()}"),
-                    # html.P(f"predicted diff USD: {ape.pred_USD_price_diff.item()}"),
-                    html.P(f"Buyer: {ape.buyer_wallet.item()}"),
-                    # html.P(f"Rarity {ape.rarity_rank.item()}"),
                 ]
             ),
         ],

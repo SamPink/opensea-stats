@@ -5,25 +5,13 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import Input, Output, dcc, html
 
-from pages import ape_sales, ape_stats, best_apes_listed
-
-import uvicorn
-from database import read_mongo
-from fastapi import FastAPI
-from fastapi.encoders import jsonable_encoder
-from fastapi_utils.tasks import repeat_every
-
-from ML.AgeGang_ML import update_ApeGang_pred_price
-from ML.ApeGang_best_value import calc_best_apegang_listing
+from pages import ape_sales, ape_stats, best_apes_listed, predicted_value
 
 # adding Folder_2 to the system path
 sys.path.insert(0, "./opensea")
 
-from opensea_collections import all_collection_names
-
-from current_listings import update_current_listings
-from database import read_mongo
-from opensea_events import *
+from opensea.database import read_mongo
+from opensea.opensea_collections import all_collection_names
 
 
 def create_app():
@@ -66,6 +54,11 @@ def create_app():
                         href="/apes-best-listings",
                         active="exact",
                     ),
+                    dbc.NavLink(
+                        "predicted price",
+                        href="/predicted-price",
+                        active="exact",
+                    ),
                 ],
                 vertical=True,
                 pills=True,
@@ -96,6 +89,8 @@ def create_app():
             return ape_sales.layout
         elif pathname == "/apes-best-listings":
             return best_apes_listed.page_best_listings()
+        elif pathname == "/predicted-price":
+            return predicted_value.layout
         # If the user tries to reach a different page, return a 404 message
         return html.H1("FUCK")
 

@@ -1,10 +1,10 @@
-from database import read_mongo, write_mongo
+from opensea.database import read_mongo, write_mongo
 
 
 ape_gang_all = read_mongo(
     "ape-gang-old_asset-all-info",
     return_df=True,
-    query_projection=["name", "image_url","permalink"],
+    query_projection=["name", "image_url", "permalink"],
 )
 
 ape_gang_traits = read_mongo(

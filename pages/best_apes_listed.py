@@ -6,7 +6,7 @@ import sys
 
 sys.path.insert(0, "./opensea")
 
-from database import read_mongo
+from opensea.database import read_mongo
 
 
 """ if value == "price":
