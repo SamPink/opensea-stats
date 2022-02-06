@@ -2,11 +2,7 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html, Input, Output, callback
 import pandas as pd
-import sys
 
-sys.path.insert(0, "./opensea")
-
-from opensea.database import read_mongo
 
 dropdown_options = [
     {"label": "price", "value": "sale_price"},
@@ -32,13 +28,6 @@ layout = html.Div(
         ),
     ]
 )
-
-""" if value == "price":
-        query_sort = [("sale_price", -1)]
-    elif value == "time":
-        query_sort = [("time", -1)]
-    else:
-        query_sort = [("time", -1)] """
 
 
 @callback(

@@ -1,25 +1,25 @@
 import dash
 import dash_bootstrap_components as dbc
-import numpy as np
-import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
-import datetime as dt
-
 from dash import Dash, dcc, html, Input, Output, callback
+import pandas as pd
 
 
 layout = html.Div(
     [
-        html.Div(id="ape-stats-container"),
+        html.H1("Hello World"),
+        html.Div(
+            id="fig",
+        ),
     ]
 )
 
 
 @callback(
-    Output("ape-stats-container", "children"), [Input("store-opensea-sales", "data")]
+    Output("fig", "children"),
+    [Input("store-opensea-sales", "data")],
 )
-def create_stats_page(opensea_data):
+def update_output(opensea_data):
     if opensea_data is None:
         return None
     else:
@@ -41,9 +41,4 @@ def create_stats_page(opensea_data):
         # name figure floor by day
         fig.update_layout(title_text="Floor Price by Day")
 
-        return html.Div(
-            [
-                html.H2("Ape Sales"),
-                dcc.Graph(figure=fig),
-            ]
-        )
+        return dcc.Graph(figure=fig)

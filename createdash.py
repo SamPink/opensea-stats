@@ -5,25 +5,32 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import Input, Output, dcc, html
 
-from pages import ape_sales, predicted_value, best_apes_listed
-
-import uvicorn
-from database import read_mongo
-from fastapi import FastAPI
-from fastapi.encoders import jsonable_encoder
-from fastapi_utils.tasks import repeat_every
-
-from ML.AgeGang_ML import update_ApeGang_pred_price
-from ML.ApeGang_best_value import calc_best_apegang_listing
+from pages import ape_stats, best_apes_listed, predicted_value, ape_sales
 
 # adding Folder_2 to the system path
 sys.path.insert(0, "./opensea")
 
-from opensea_collections import all_collection_names, all_collections_with_pred_price
+from opensea.database import read_mongo
+from opensea.opensea_collections import all_collections_with_pred_price
 
-from current_listings import update_current_listings
-from database import read_mongo
-from opensea_events import *
+
+def page_home():
+    all_collections = all_collections_with_pred_price()
+
+    # create a options list for the dropdown
+    options = [
+        {"label": collection, "value": collection} for collection in all_collections
+    ]
+    return html.Div(
+        [
+            html.H1("Hello World"),
+            dcc.Dropdown(
+                id="dropdown-collection",
+                options=options,
+                style={"width": "50%"},
+            ),
+        ]
+    )
 
 
 def create_app():
@@ -60,13 +67,14 @@ def create_app():
                 [
                     dbc.NavLink("home", href="/"),
                     dbc.NavLink("Sales history", href="/sales-history", active="exact"),
+                    dbc.NavLink("Sales graph", href="/sales-graph", active="exact"),
+                    dbc.NavLink(
+                        "predicted value", href="/predicted-value", active="exact"
+                    ),
                     dbc.NavLink(
                         "best Ape Gang listings",
                         href="/apes-best-listings",
                         active="exact",
-                    ),
-                    dbc.NavLink(
-                        "predicted value", href="/predicted-value", active="exact"
                     ),
                 ],
                 vertical=True,
@@ -90,7 +98,7 @@ def create_app():
 
     @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
     def render_page_content(pathname):
-        if pathname == "/":
+        if pathname == "/" or pathname == "/dash/":
             return page_home()
         elif pathname == "/predicted-value":
             return predicted_value.layout
@@ -98,26 +106,11 @@ def create_app():
             return ape_sales.layout
         elif pathname == "/apes-best-listings":
             return best_apes_listed.page_best_listings()
+        elif pathname == "/sales-graph":
+            return ape_stats.layout
+
         # If the user tries to reach a different page, return a 404 message
         return html.H1("FUCK")
-
-    def page_home():
-        all_collections = all_collections_with_pred_price()
-
-        # create a options list for the dropdown
-        options = [
-            {"label": collection, "value": collection} for collection in all_collections
-        ]
-        return html.Div(
-            [
-                html.H1("Hello World"),
-                dcc.Dropdown(
-                    id="dropdown-collection",
-                    options=options,
-                    style={"width": "50%"},
-                ),
-            ]
-        )
 
     # create a callback for the dropdown
     @app.callback(
