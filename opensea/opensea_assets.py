@@ -1,8 +1,5 @@
-import io
-from pandas import json_normalize
 import time
 import requests
-import json
 import pandas as pd
 from math import ceil
 import numpy as np
@@ -159,3 +156,45 @@ def get_collection_assets(collection, id_col="token_id", offset=0):
         overwrite=True,
         database_name="mvh",
     )
+
+
+def get_from_collection(collection, id_col="token_id", col_to_return=["image_url"]):
+    # if collection name contains ape-gang
+    if re.search("ape-gang", collection):
+        id_col = "name"
+
+    query_projection = {
+        "_id": 0,
+        id_col: 1,
+    }
+
+    # add the columns to return
+    for col in col_to_return:
+        query_projection[col] = 1
+
+    try:
+
+        assets = read_mongo(
+            collection=f"{collection}_asset-all-info",
+            return_df=True,
+            query_projection=query_projection,
+        )
+
+        assets = assets.reset_index()
+        assets = assets.rename(columns={id_col: "asset_id"})
+
+        # is id contained in string with # followed by digits
+        first_id = assets["asset_id"][0]
+        if re.search("#\d+", str(first_id)) is not None and isinstance(first_id, str):
+            assets = assets.assign(
+                asset_id=lambda x: x["asset_id"].str.extract("(\d+)")
+            )
+            assets["asset_id"] = pd.to_numeric(assets["asset_id"])
+        else:
+
+            assets["asset_id"] = assets["asset_id"].astype(int)
+
+        return assets
+    except Exception as e:
+        print(e)
+        return None

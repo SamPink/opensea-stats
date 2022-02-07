@@ -5,13 +5,14 @@ import dash
 import dash_bootstrap_components as dbc
 from dash import Input, Output, dcc, html
 
-from pages import ape_stats, best_apes_listed, predicted_value, ape_sales
+from pages import ape_sales, ape_stats, best_apes_listed, predicted_value
 
 # adding Folder_2 to the system path
 sys.path.insert(0, "./opensea")
 
 from opensea.database import read_mongo
 from opensea.opensea_collections import all_collections_with_pred_price
+from opensea.opensea_assets import get_from_collection
 
 
 def page_home():
@@ -147,6 +148,19 @@ def create_app():
             f"{collection}_predicted_USD",
             return_df=True,
         )
+
+        asset_cols = get_from_collection(
+            collection=collection, col_to_return=["image_url", "permalink"]
+        )
+        if asset_cols is None or asset_cols.empty:
+            asset_cols = get_from_collection(
+                collection=collection,
+                col_to_return=["image_url", "permalink"],
+                id_col="asset_id",
+            )
+
+        # join value and asset_cols on asset_id
+        value = value.merge(asset_cols, on="asset_id")
 
         if value is None or value.empty:
             # no predicted value

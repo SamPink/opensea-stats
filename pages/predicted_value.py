@@ -35,7 +35,7 @@ def ape_card(ape):
     return dbc.Card(
         [
             dbc.CardImg(
-                # src=ape.image_url.item(),
+                src=ape.image_url.item(),
                 top=True,
             ),
             dbc.CardBody(
@@ -44,6 +44,7 @@ def ape_card(ape):
                     html.H4(f"Rarity rank {ape.rarity_rank.item()}"),
                     html.H4(f"Predictred USD {ape.predicted_USD.item()}"),
                     html.H4(f"Number of traits {ape.trait_n.item()}"),
+                    dbc.CardLink("Opensea listing", href=ape.permalink.item()),
                 ]
             ),
         ],
