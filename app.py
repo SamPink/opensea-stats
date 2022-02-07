@@ -4,11 +4,15 @@ from fastapi.middleware.wsgi import WSGIMiddleware
 from fastapi_utils.tasks import repeat_every
 from ML.AgeGang_ML import update_ApeGang_pred_price
 from ML.ApeGang_best_value import calc_best_apegang_listing
+from ML.all_collection_best_value import calc_best_listing
 
 from createdash import create_app
 
 from api import endpoints, sales
-from opensea.opensea_collections import all_collection_names
+from opensea.opensea_collections import (
+    all_collection_names,
+    all_collections_with_pred_price,
+)
 from opensea.opensea_events import update_opensea_events
 
 app = FastAPI()
@@ -46,15 +50,21 @@ def update_price_pred():
 @app.on_event("startup")
 @repeat_every(seconds=60 * 10)  # repeat 10 mins
 def update_events():
-    if not DEBUG:
-        nfts = all_collection_names()
-        # nfts = ["ape-gang", "ape-gang-old", "boredapeyachtclub", "toucan-gang"]
-        for x in nfts:
-            print(f"updating {x} events")
-            update_opensea_events(collection=x)
+    # if not DEBUG:
+    all_collections = all_collections_with_pred_price()
+    # drop cryptopunks
+    all_collections.remove("cryptopunks")
+    for collection in all_collections:
+        calc_best_listing(collection=collection, update_listings=True)
 
-        calc_best_apegang_listing(update_listings=True)
-        print("update apegang best listings")
+    nfts = all_collection_names()
+    # nfts = ["ape-gang", "ape-gang-old", "boredapeyachtclub", "toucan-gang"]
+    for x in nfts:
+        print(f"updating {x} events")
+        update_opensea_events(collection=x)
+
+    # calc_best_apegang_listing(update_listings=True)
+    # print("update apegang best listings")
 
 
 if __name__ == "__main__":
