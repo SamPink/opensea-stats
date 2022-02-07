@@ -50,18 +50,18 @@ def update_price_pred():
 @app.on_event("startup")
 @repeat_every(seconds=60 * 10)  # repeat 10 mins
 def update_events():
-    # if not DEBUG:
-    all_collections = all_collections_with_pred_price()
-    # drop cryptopunks
-    all_collections.remove("cryptopunks")
-    for collection in all_collections:
-        calc_best_listing(collection=collection, update_listings=True)
+    if not DEBUG:
+        all_collections = all_collections_with_pred_price()
+        # drop cryptopunks
+        all_collections.remove("cryptopunks")
+        for collection in all_collections:
+            calc_best_listing(collection=collection, update_listings=True)
 
-    nfts = all_collection_names()
-    # nfts = ["ape-gang", "ape-gang-old", "boredapeyachtclub", "toucan-gang"]
-    for x in nfts:
-        print(f"updating {x} events")
-        update_opensea_events(collection=x)
+        nfts = all_collection_names()
+        # nfts = ["ape-gang", "ape-gang-old", "boredapeyachtclub", "toucan-gang"]
+        for x in nfts:
+            print(f"updating {x} events")
+            update_opensea_events(collection=x)
 
     # calc_best_apegang_listing(update_listings=True)
     # print("update apegang best listings")

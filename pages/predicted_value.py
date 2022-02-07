@@ -1,12 +1,6 @@
-import dash
 import dash_bootstrap_components as dbc
-import numpy as np
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import datetime as dt
-
-from dash import Dash, dcc, html, Input, Output, callback
+from dash import html, Input, Output, callback
 
 
 layout = html.Div(
@@ -17,7 +11,7 @@ layout = html.Div(
 
 
 @callback(
-    Output("ape-stats-container", "children"), [Input("store-predicted-value", "data")]
+    Output("ape-stats-container", "children"), [Input("store-best-listings", "data")]
 )
 def create_stats_page(opensea_data):
     if opensea_data is None:
@@ -31,7 +25,13 @@ def create_stats_page(opensea_data):
 
 
 def ape_card(ape):
-    print(ape.info())
+
+    # round pred_eth up to nearest 0.01
+    pred = round(ape.predicted_USD.item(), 2)
+
+    # round listing_eth up to nearest 0.01
+    listing = round(ape.listing_USD.item(), 2)
+
     return dbc.Card(
         [
             dbc.CardImg(
@@ -40,10 +40,10 @@ def ape_card(ape):
             ),
             dbc.CardBody(
                 [
-                    html.H4(f"Asset id {ape.asset_id.item()}"),
-                    html.H4(f"Rarity rank {ape.rarity_rank.item()}"),
-                    html.H4(f"Predictred USD {ape.predicted_USD.item()}"),
-                    html.H4(f"Number of traits {ape.trait_n.item()}"),
+                    html.H4(f"Ape {ape.asset_id.item()}"),
+                    html.P(f"Listing Price ${listing} ETH"),
+                    html.P(f"Predicted Price: ${pred} ETH"),
+                    html.P(f"Rarity: {ape.rarity_rank.item()}"),
                     dbc.CardLink("Opensea listing", href=ape.permalink.item()),
                 ]
             ),

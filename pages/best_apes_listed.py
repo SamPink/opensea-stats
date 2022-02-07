@@ -1,20 +1,10 @@
-import dash
 import dash_bootstrap_components as dbc
-from dash import Dash, dcc, html, Input, Output, callback
-import pandas as pd
+from dash import html, Input, Output, callback
 import sys
 
 sys.path.insert(0, "./opensea")
 
 from opensea.database import read_mongo
-
-
-""" if value == "price":
-        query_sort = [("sale_price", -1)]
-    elif value == "time":
-        query_sort = [("time", -1)]
-    else:
-        query_sort = [("time", -1)] """
 
 
 def page_best_listings():
