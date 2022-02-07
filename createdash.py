@@ -77,7 +77,7 @@ def create_app():
                     dbc.NavLink("Sales history", href="/sales-history", active="exact"),
                     dbc.NavLink("Sales graph", href="/sales-graph", active="exact"),
                     dbc.NavLink(
-                        "predicted value", href="/predicted-value", active="exact"
+                        "Best value listing", href="/predicted-value", active="exact"
                     ),
                     dbc.NavLink(
                         "best Ape Gang listings",
