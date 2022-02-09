@@ -52,43 +52,7 @@ def update_current_listings(collection, update_DB=True, find_lastUpdated_from_DB
         still_listed["duration"], "s"
     )
     # keep only listings where listing end is in the future
-    still_listed[still_listed.listing_ending > dt.datetime.now()]
-
-    # convert listing price to USD
-    still_listed["listing_USD"] = ""
-    t_minus1 = dt.datetime.now() - dt.timedelta(minutes=1)
-    eth_usd = HistoricalData(
-        "ETH-USD", 60, t_minus1.strftime("%Y-%m-%d-%H-%M")
-    ).retrieve_data()
-    dai_usd = HistoricalData(
-        "DAI-USD", 60, t_minus1.strftime("%Y-%m-%d-%H-%M")
-    ).retrieve_data()
-
-    sol_usd = HistoricalData(
-        "SOL-USD", 60, t_minus1.strftime("%Y-%m-%d-%H-%M")
-    ).retrieve_data()
-
-    # currencies = still_listed.listing_currency.unique()  # unique list of currencies
-    for index, row in still_listed.iterrows():
-        if row.listing_currency == "USDC":
-            still_listed.loc[index, "listing_USD"] = row.listing_price
-        elif row.listing_currency == "ETH":
-            still_listed.loc[index, "listing_USD"] = (
-                row.listing_price * eth_usd.close[0]
-            )
-        elif row.listing_currency == "DAI":
-            still_listed.loc[index, "listing_USD"] = (
-                row.listing_price * dai_usd.close[0]
-            )
-        elif row.listing_currency == "SOL":
-            still_listed.loc[index, "listing_USD"] = (
-                row.listing_price * sol_usd.close[0]
-            )
-        else:
-            print("----------------------------------------------------------------")
-            print(f"currency {row.listing_currency} not recognized!")
-            print("----------------------------------------------------------------")
-    print(still_listed.listing_USD)
+    still_listed = still_listed[still_listed.listing_ending > dt.datetime.now()]
 
     if collection == "ape-gang-old":
         migrated_apes = read_mongo(
@@ -108,6 +72,12 @@ def update_current_listings(collection, update_DB=True, find_lastUpdated_from_DB
     else:
         return still_listed
 
+
+nfts = "world-of-women-nft"
+update_opensea_events(
+    collection=nfts, find_firstUpdated_from_DB=True, find_lastUpdated_from_DB=False
+)
+update_current_listings(nfts)
 
 """
 collections = [
