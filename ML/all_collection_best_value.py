@@ -77,6 +77,9 @@ def calc_best_listing(update_listings=True, collection=None):
         ApeGang_USD["predicted_USD"] / data["ethereum"]["usd"]
     )
 
+    # filter listing_cuurency == ETH
+    ApeGang_USD = ApeGang_USD[ApeGang_USD.listing_currency == "ETH"]
+
     ApeGang_USD["listing_value"] = ApeGang_USD.predicted_USD / ApeGang_USD.listing_USD
 
     ApeGang_USD = ApeGang_USD.sort_values("listing_value", ascending=False)
