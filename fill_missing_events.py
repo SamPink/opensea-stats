@@ -20,10 +20,16 @@ def calc_event_timediff(collection=collection, eventType="sales", min_gap_second
         .sort_values(by=["time"])
         .reset_index()
     )
+    x["week_year"] = x["time"].dt.week.astype(str) + "_" + x["time"].dt.year.astype(str)
     x["time_diff"] = (x["time"] - x["time"].shift(1)).dt.total_seconds()
-    biggest_gaps = x.time_diff.sort_values(ascending=False).dropna()
-    biggest_gaps = biggest_gaps[biggest_gaps >= min_gap_seconds]
-    return x, biggest_gaps
+    time_diff_95_perc = x.groupby("week_year").quantile(0.99)["time_diff"]
+    x = x.merge(time_diff_95_perc, on="week_year", how="left").dropna()
+    x = x.rename(
+        columns={"time_diff_x": "time_diff", "time_diff_y": "time_diff_99_perc"}
+    )
+    big_gaps = x[x.time_diff > x.time_diff_99_perc]
+
+    return big_gaps[["time", "time_diff"]], big_gaps.time_diff.to_list()
 
 
 def dict_to_events_class(dict, eventType):
