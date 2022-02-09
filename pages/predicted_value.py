@@ -1,12 +1,20 @@
 import dash_bootstrap_components as dbc
 import pandas as pd
 from dash import html, Input, Output, callback
+from .assets.styles import Styles
 
 
-layout = html.Div(
-    [
+layout = html.Div([
+            html.Div(
+                children=[
+                    html.H1("Predicted Prices",
+                        style=Styles.TITLE_STYLE_CENTER
+                    )
+                ],
+                style=Styles.DIV_CENTERED_HOLDER
+            ),
         html.Div(id="ape-stats-container"),
-    ]
+    ],
 )
 
 

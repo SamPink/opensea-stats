@@ -18,6 +18,9 @@ from opensea.opensea_events import update_opensea_events
 app = FastAPI()
 dash_app = create_app()
 
+app.include_router(sales.router, prefix="/api/sales")
+app.include_router(endpoints.router, prefix="/api")
+
 app.mount("/dash", WSGIMiddleware(dash_app.server))
 """ import sys
 
@@ -29,9 +32,6 @@ from opensea.database import read_mongo """
 
 # set app title
 app.title = "mvh.eth"
-
-app.include_router(sales.router, prefix="/api/sales")
-app.include_router(endpoints.router, prefix="/api")
 
 # server.config.from_object(cfg)
 

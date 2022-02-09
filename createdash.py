@@ -14,6 +14,8 @@ from pages import (
     sales_history_grid,
 )
 
+from pages.assets.styles import Styles
+
 # adding Folder_2 to the system path
 sys.path.insert(0, "./opensea")
 
@@ -37,19 +39,25 @@ def page_home():
         {"label": collection, "value": collection} for collection in all_collections
     ]
     return html.Div(
-        [
-            html.H1("Hello World"),
-            dcc.Dropdown(
-                id="dropdown-collection",
-                options=options,
-                style={"width": "50%"},
+        [   
+         html.Div(
+             children=[
+                 html.H1(
+                "Choose your collection:",
+                style=Styles.SUB_TITLE_STYLE,
             ),
-        ]
+            dcc.Dropdown(
+                    id="dropdown-collection",
+                    options=options,
+                    # style=Styles.DROPDOWN_BOX_STYLE,
+                ),
+             ],
+             style=Styles.DIV_CENTERED_HOLDER
+         ),          
+        ],
     )
 
-
 def create_app():
-
     app = dash.Dash(
         external_stylesheets=[dbc.themes.BOOTSTRAP], requests_pathname_prefix="/dash/"
     )
@@ -80,14 +88,14 @@ def create_app():
             html.P("Ape Gang Info", className="lead"),
             dbc.Nav(
                 [
-                    dbc.NavLink("home", href="/"),
+                    dbc.NavLink("Home", href="/dash"),
                     dbc.NavLink("Sales history", href="/sales-history", active="exact"),
                     dbc.NavLink("Sales graph", href="/sales-graph", active="exact"),
                     dbc.NavLink(
-                        "Best value listing", href="/predicted-value", active="exact"
+                        "Predicted", href="/predicted-value", active="exact"
                     ),
                     dbc.NavLink(
-                        "best Ape Gang listings",
+                        "Best Listings",
                         href="/apes-best-listings",
                         active="exact",
                     ),
