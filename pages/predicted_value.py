@@ -27,10 +27,10 @@ def create_stats_page(opensea_data):
 def ape_card(ape):
 
     # round pred_eth up to nearest 0.01
-    pred = round(ape.predicted_USD.item(), 2)
+    pred = round(ape.predicted_ETH.item(), 2)
 
     # round listing_eth up to nearest 0.01
-    listing = round(ape.listing_USD.item(), 2)
+    listing = round(ape.listing_price.item(), 2)
 
     return dbc.Card(
         [
@@ -41,8 +41,8 @@ def ape_card(ape):
             dbc.CardBody(
                 [
                     html.H4(f"Ape {ape.asset_id.item()}"),
-                    html.P(f"Listing Price ${listing} ETH"),
-                    html.P(f"Predicted Price: ${pred} ETH"),
+                    html.P(f"Listing Price {listing} ETH"),
+                    html.P(f"Predicted Price: {pred} ETH"),
                     html.P(f"Rarity: {ape.rarity_rank.item()}"),
                     dbc.CardLink("Opensea listing", href=ape.permalink.item()),
                 ]

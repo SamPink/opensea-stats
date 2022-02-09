@@ -50,6 +50,14 @@ def update_price_pred():
 @app.on_event("startup")
 @repeat_every(seconds=60 * 10)  # repeat 10 mins
 def update_events():
+    done = [
+        "the-doge-pound",
+        "world-of-women-nft",
+        "supducks",
+        "cryptoadz-by-gremplin",
+    ]
+    for d in done:
+        calc_best_listing(collection=d, update_listings=False)
     if not DEBUG:
         all_collections = all_collections_with_pred_price()
         # drop cryptopunks

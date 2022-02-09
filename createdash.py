@@ -23,7 +23,14 @@ from opensea.opensea_assets import get_from_collection
 
 
 def page_home():
-    all_collections = all_collections_with_pred_price()
+    # all_collections = all_collections_with_pred_price()
+
+    all_collections = [
+        "the-doge-pound",
+        "world-of-women-nft",
+        "supducks",
+        "cryptoadz-by-gremplin",
+    ]
 
     # create a options list for the dropdown
     options = [

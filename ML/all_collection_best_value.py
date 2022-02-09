@@ -27,7 +27,6 @@ def calc_best_listing(update_listings=True, collection=None):
         "listing_price": 1,
         "listing_ending": 1,
         "listing_currency": 1,
-        "listing_USD": 1,
     }
 
     listed = read_mongo(
@@ -35,6 +34,16 @@ def calc_best_listing(update_listings=True, collection=None):
         query_projection=listing_projection,
         return_df=True,
     )
+
+    # get eth to usd rate from an external api
+    # https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd
+    import requests
+
+    url = "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd"
+    data = requests.get(url).json()
+
+    # get listing usd price
+    listed["listing_USD"] = listed["listing_price"] * data["ethereum"]["usd"]
 
     # drop duplicates on asset_id
     # TODO why dis happen
@@ -45,14 +54,6 @@ def calc_best_listing(update_listings=True, collection=None):
         f"{collection}_traits",
         query_projection={
             "_id": 0,
-            "asset_id": 1,
-            "Clothes": 1,
-            "Ears": 1,
-            "Eyes": 1,
-            "Fur": 1,
-            "Hat": 1,
-            "Mouth": 1,
-            "rarity_rank": 1,
         },
         return_df=True,
     )
@@ -71,6 +72,10 @@ def calc_best_listing(update_listings=True, collection=None):
     ApeGang_USD = ApeGang_USD.merge(listed, how="right", on="asset_id")
 
     ApeGang_USD = ApeGang_USD.merge(apes, how="left", on="asset_id")
+
+    ApeGang_USD["predicted_ETH"] = (
+        ApeGang_USD["predicted_USD"] / data["ethereum"]["usd"]
+    )
 
     ApeGang_USD["listing_value"] = ApeGang_USD.predicted_USD / ApeGang_USD.listing_USD
 
