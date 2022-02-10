@@ -16,12 +16,12 @@ from opensea.opensea_collections import (
 from opensea.opensea_events import update_opensea_events
 
 app = FastAPI()
-dash_app = create_app()
+# dash_app = create_app()
 
 app.include_router(sales.router, prefix="/api/sales")
 app.include_router(endpoints.router, prefix="/api")
 
-app.mount("/dash", WSGIMiddleware(dash_app.server))
+# app.mount("/dash", WSGIMiddleware(dash_app.server))
 """ import sys
 
 # adding Folder_2 to the system path
@@ -51,13 +51,21 @@ def update_price_pred():
 @repeat_every(seconds=60 * 10)  # repeat 10 mins
 def update_events():
     done = [
+        "cool-cats-nft",
         "the-doge-pound",
         "world-of-women-nft",
         "supducks",
         "cryptoadz-by-gremplin",
+        "rumble-kong-league",
+        "pepsi-mic-drop",
+        "deadfellaz",
+        "doodledogsofficial",
+        "robotos-official",
+        "azuki",
+        "alpacadabraz",
     ]
     for d in done:
-        calc_best_listing(collection=d, update_listings=False)
+        calc_best_listing(collection=d, update_listings=True)
     if not DEBUG:
         all_collections = all_collections_with_pred_price()
         # drop cryptopunks

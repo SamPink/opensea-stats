@@ -28,10 +28,18 @@ def page_home():
     # all_collections = all_collections_with_pred_price()
 
     all_collections = [
+        "cool-cats-nft",
         "the-doge-pound",
         "world-of-women-nft",
         "supducks",
         "cryptoadz-by-gremplin",
+        "rumble-kong-league",
+        "pepsi-mic-drop",
+        "deadfellaz",
+        "doodledogsofficial",
+        "robotos-official",
+        "azuki",
+        "alpacadabraz",
     ]
 
     # create a options list for the dropdown
@@ -39,23 +47,24 @@ def page_home():
         {"label": collection, "value": collection} for collection in all_collections
     ]
     return html.Div(
-        [   
-         html.Div(
-             children=[
-                 html.H1(
-                "Choose your collection:",
-                style=Styles.SUB_TITLE_STYLE,
+        [
+            html.Div(
+                children=[
+                    html.H1(
+                        "Choose your collection:",
+                        style=Styles.SUB_TITLE_STYLE,
+                    ),
+                    dcc.Dropdown(
+                        id="dropdown-collection",
+                        options=options,
+                        # style=Styles.DROPDOWN_BOX_STYLE,
+                    ),
+                ],
+                style=Styles.DIV_CENTERED_HOLDER,
             ),
-            dcc.Dropdown(
-                    id="dropdown-collection",
-                    options=options,
-                    # style=Styles.DROPDOWN_BOX_STYLE,
-                ),
-             ],
-             style=Styles.DIV_CENTERED_HOLDER
-         ),          
         ],
     )
+
 
 def create_app():
     app = dash.Dash(
@@ -91,9 +100,7 @@ def create_app():
                     dbc.NavLink("Home", href="/dash"),
                     dbc.NavLink("Sales history", href="/sales-history", active="exact"),
                     dbc.NavLink("Sales graph", href="/sales-graph", active="exact"),
-                    dbc.NavLink(
-                        "Predicted", href="/predicted-value", active="exact"
-                    ),
+                    dbc.NavLink("Predicted", href="/predicted-value", active="exact"),
                     dbc.NavLink(
                         "Best Listings",
                         href="/apes-best-listings",

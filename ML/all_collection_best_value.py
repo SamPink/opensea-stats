@@ -13,6 +13,9 @@ from opensea.current_listings import update_current_listings
 
 def calc_best_listing(update_listings=True, collection=None):
 
+    if collection == "toucan-gang":
+        print(collection)
+
     # do we want to update the Database
     if update_listings:
         update_current_listings(collection)
