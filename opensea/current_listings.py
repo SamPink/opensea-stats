@@ -73,12 +73,6 @@ def update_current_listings(collection, update_DB=True, find_lastUpdated_from_DB
         return still_listed
 
 
-nfts = "world-of-women-nft"
-update_opensea_events(
-    collection=nfts, find_firstUpdated_from_DB=True, find_lastUpdated_from_DB=False
-)
-update_current_listings(nfts)
-
 """
 collections = [
     "ape-gang",

@@ -1,11 +1,15 @@
 import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output, callback
 import pandas as pd
+from .assets.styles import Styles
 
 
 layout = html.Div(
-    [
-        html.H1("Hello World"),
+    [   
+        html.Div(
+            html.H1("Sales History", style=Styles.TITLE_STYLE_CENTER),
+            style=Styles.DIV_CENTERED_HOLDER
+        ),
         html.Div(
             id="fig",
         ),

@@ -1,6 +1,7 @@
 import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html, Input, Output, callback
 import pandas as pd
+from .assets.styles import Styles
 
 
 dropdown_options = [
@@ -14,13 +15,16 @@ dropdown = dcc.Dropdown(
     id="dropdown",
     options=dropdown_options,
     value="time",
-    style={"width": "50%"},
+    style=Styles.DROPDOWN_BOX_STYLE_CENTER,
 )
 
 layout = html.Div(
     [
-        html.H1("Hello World"),
-        html.H2(id="title"),
+        html.Div(children=[
+            html.H1("Sales History", style=Styles.TITLE_STYLE_CENTER),
+        ],
+        style=Styles.DIV_CENTERED_HOLDER
+        ),
         dropdown,
         html.Div(
             id="card-container",

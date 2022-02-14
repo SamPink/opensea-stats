@@ -1,6 +1,7 @@
 import dash_bootstrap_components as dbc
 from dash import html, Input, Output, callback
 import sys
+from .assets.styles import Styles
 
 sys.path.insert(0, "./opensea")
 
@@ -8,7 +9,6 @@ from opensea.database import read_mongo
 
 
 def page_best_listings():
-
     df = read_mongo(
         collection="ape-gang_bestvalue_opensea_listings",
         query_limit=100,
@@ -30,7 +30,7 @@ def page_best_listings():
     ape_ids = df["asset_id"].tolist()
 
     apes_rarity = read_mongo(
-        f"ape-gang-old_traits",
+        "ape-gang-old_traits",
         return_df=True,
         query_filter={"asset_id": {"$in": ape_ids}},
     )
@@ -52,8 +52,11 @@ def page_best_listings():
 
     # return html.Div([ape_card(df.iloc[[0]])])
     return html.Div(
-        [
-            html.H1("Best Apes Listed"),
+        [   
+            html.Div(
+                html.H1("Best Apes Listed", style=Styles.TITLE_STYLE_CENTER),
+                style=Styles.DIV_CENTERED_HOLDER
+            ),
             dbc.Alert(
                 "ETH value is currently wrong as we are converting at time of listing and ETH has gone down since then :( ",
                 color="warning",
