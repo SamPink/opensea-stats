@@ -48,6 +48,9 @@ def dict_to_events_class(dict, eventType):
 
 
 def fill_event_gaps(collection=collection, min_gap_seconds=3600, eventType="sales"):
+    if collection == "cryptopunks" and eventType != "sales":
+        return None
+
     # calculate time diffference between listings
     eventType_dict = {
         "sales": "successful",
@@ -111,6 +114,25 @@ def fill_event_gaps(collection=collection, min_gap_seconds=3600, eventType="sale
     )
 
 
-for c in all_collections_with_traits():
+collections = all_collections_with_traits()
+done = [
+    "cool-cats-nft",
+    "the-doge-pound",
+    "world-of-women-nft",
+    "supducks",
+    "cryptoadz-by-gremplin",
+    "rumble-kong-league",
+    "ape-gang-old",
+    "pepsi-mic-drop",
+    "toucan-gang",
+    "deadfellaz",
+    "doodledogsofficial",
+    "robotos-official",
+    "azuki",
+    "alpacadabraz",
+]
+for i in done:
+    collections.remove(i)
+for c in collections:
     for e in ["listings", "sales", "cancellations", "transfers"]:
         fill_event_gaps(collection=c, eventType=e, min_gap_seconds=60 * 60 * 2)
