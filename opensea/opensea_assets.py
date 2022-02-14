@@ -231,3 +231,16 @@ def get_from_collection(collection, id_col="token_id", col_to_return=["image_url
     except Exception as e:
         print(e)
         return None
+
+
+"""
+collections = all_collection_names()
+collections.remove("lazy-lions")
+collections.remove("mutant-ape-yacht-club")
+for i in collections:
+    metadata = get_opensea_metadata(collection=i)
+    n_items = int(metadata["collection"]["stats"]["count"])
+    if n_items > 10020:
+        get_collection_assets(i)
+        
+"""

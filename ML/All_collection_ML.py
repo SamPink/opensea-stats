@@ -28,8 +28,7 @@ sys.path.append(parentdir)
 
 from opensea.database import read_mongo, write_mongo, connect_mongo
 from opensea.cryto_prices import update_eth_usd
-from opensea.opensea_assets import get_collection_assets, get_opensea_metadata
-from opensea.opensea_events import update_opensea_events
+from opensea.opensea_assets import get_opensea_metadata
 
 
 database = connect_mongo()
@@ -268,13 +267,17 @@ models.append(("Stochastic Gradient Descent", SGDRegressor()))
 models.append(("Gradient Boosting", GradientBoostingRegressor()))
 models.append(("Support Vector Machine", SVR()))
 
-model_CV2 = GridSearchCV(RandomForestRegressor(
-        n_estimators=500, max_depth=13, max_features=0.5,n_jobs=-1
-    ), cv=10, scoring="neg_mean_absolute_error", param_grid={}, n_jobs=-1    )
+model_CV2 = GridSearchCV(
+    RandomForestRegressor(n_estimators=500, max_depth=13, max_features=0.5, n_jobs=-1),
+    cv=10,
+    scoring="neg_mean_absolute_error",
+    param_grid={},
+    n_jobs=-1,
+)
 
-model_CV2.fit(X_train.drop(columns=['perc_change_5d']), y_train)
+model_CV2.fit(X_train.drop(columns=["perc_change_5d"]), y_train)
 
-model2_ypred = model_CV2.predict(X_test.drop(columns=['perc_change_5d']))
+model2_ypred = model_CV2.predict(X_test.drop(columns=["perc_change_5d"]))
 model2_mae = mean_absolute_error(y_test, model2_ypred)
 expl_var = explained_variance_score(y_test, model2_ypred)
 
@@ -311,7 +314,7 @@ if not os.path.isdir(dir):
 best_model = model_CV2
 
 X_predict = traits.copy().merge(last_day, on="collection", how="inner")
-trained_cols = X_train.drop(columns=['perc_change_5d']).columns
+trained_cols = X_train.drop(columns=["perc_change_5d"]).columns
 X_predict[X_train.columns] = scaler.transform(X_predict[X_train.columns])
 
 X_predict["predicted_USD"] = best_model.predict(X_predict[trained_cols])
@@ -321,7 +324,7 @@ X_predict["ML_model"] = str(best_model.best_estimator_)
 fig = px.scatter(
     x=model2_ypred,
     y=y_test,
-    opacity=0.3
+    opacity=0.3,
     trendline="lowess",
     trendline_options=dict(frac=0.5),
     title=f"All collection NFT USD price prediction <br><sup>Mean absolute error =${model2_mae:.2f} | Explained Variance % ={expl_var*100:.1f}<sup>",
@@ -354,17 +357,15 @@ print(f"Best RF model =model_CV{best_model_index+1}")
 best_model = RF_models[best_model_index]
 """
 import pickle as pkl
-collection='All_collections'
+
+collection = "All_collections"
 pkl.dump(
     best_model,
     open(f"ML/{collection}/{collection}_price_pred_model.pkl", "wb"),
 )
 pkl.dump(scaler, open(f"ML/{collection}/{collection}_scaler.pkl", "wb"))
 write_mongo(
-    data=X_predict[['asset_id', 'collection','predicted_USD','ML_model']],
-    collection=f"{collection}_predicted_USD", overwrite=True
+    data=X_predict[["asset_id", "collection", "predicted_USD", "ML_model"]],
+    collection=f"{collection}_predicted_USD",
+    overwrite=True,
 )
-
-
-
-

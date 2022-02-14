@@ -51,6 +51,10 @@ def dict_to_sales(response_json):
         print("ignoring sale of bundle")
         return None
 
+    if response_json["payment_token"] is None:
+        print("Ignoring sale with no currency record")
+        return None
+
     x = sale_event(
         **{
             "sale_id": int(response_json["id"]),
