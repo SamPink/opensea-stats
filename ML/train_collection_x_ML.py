@@ -48,8 +48,12 @@ def collection_autoML(collection, sales_after=dt.datetime(2000, 1, 1)):
         query_filter=only_ETH,
     ).drop_duplicates()  # drop any duplicate sales
 
+    if sales.shape[0] < 4000:
+        print(f"{sales.shape[0]} {collection} is not enough to train model")
+        return None
+
     if collection == "cryptopunks":
-        top_legit_sale = 4300
+        top_legit_sale = 8500
         sales = sales[
             sales.sale_price < top_legit_sale
         ]  # remove FAKE high sales from cryptopunks
