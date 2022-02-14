@@ -26,7 +26,6 @@ def sec_since_epoch(time):
     return int((dt_obj - epoch).total_seconds())
 
 
-
 def get_opensea_events(
     search_after=None,
     search_before=None,
@@ -73,32 +72,34 @@ def get_opensea_events(
     if response.status_code == 200:
         return response.json()
     elif response.status_code == 429:
-        #loop until we get a 200
+        # loop until we get a 200
         count = 0
         while response.status_code == 429:
             count += 1
             time.sleep(10)
-            
+
             response = requests.request("GET", url, params=params, headers=headers)
-            
-            #if we get a 200, return the json
+
+            # if we get a 200, return the json
             if response.status_code == 200:
                 return response.json()
-            
-            #if count > 20, raise an error
+
+            # if count > 20, raise an error
             if count > 20:
                 raise ValueError(
                     "Too many 429 errors. Please check your API key and try again."
                 )
     else:
-        #wait 10 seconds and try again
-        time.sleep(10) 
+        # wait 10 seconds and try again
+        time.sleep(10)
         response = requests.request("GET", url, params=params, headers=headers)
         if response.status_code == 200:
             return response.json()
         else:
-            #if still nothing, return error
-            print(f"Error in Opensea Events API call. Status code {response.status_code}.")
+            # if still nothing, return error
+            print(
+                f"Error in Opensea Events API call. Status code {response.status_code}."
+            )
             return None
 
 
@@ -197,7 +198,11 @@ def update_opensea_events(
                 print(f"{i} API calls made")
                 for t in transfers["asset_events"]:
                     # don't register transfers to burn address
-                    if t["transaction"]["to_account"]["address"] is not opensea_burn:
+                    if (
+                        t["transaction"] is not None
+                        and t["transaction"]["to_account"]["address"]
+                        is not opensea_burn
+                    ):
                         transfer_class = dict_to_transfer(t)
                         if transfer_class is not None:
                             all_transfers.append(dict(transfer_class))
@@ -284,25 +289,3 @@ def update_opensea_events(
                 data=all_canc,
                 overwrite=overwrite_DB,
             )
-
-
-"""collections = [
-    "ape-gang",
-    "ape-gang-old",
-    "boredapeyachtclub",
-    "bored-ape-kennel-club",
-    "mutant-ape-yacht-club",
-    "chromie-squiggle-by-snowfro",
-    "cool-cats-nft",
-    "cryptoadz-by-gremplin",
-    "cryptomories",
-    "guttercatgang",
-    "toucan-gang",
-    "the-doge-pound",
-]
-for nfts in collections:
-
-    update_opensea_events(
-        collection=nfts, find_firstUpdated_from_DB=True, find_lastUpdated_from_DB=False
-    )
-"""
