@@ -135,6 +135,10 @@ def dict_to_listing(response_json):
         print(f"listing of #{get_asset_id(response_json)} with no price")
         return None
 
+    if response_json["payment_token"] is None:
+        print("Ignoring listings with no currency record")
+        return None
+
     if response_json["duration"] is None:
         auction_time = 1e9
     else:
