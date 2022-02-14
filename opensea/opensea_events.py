@@ -199,8 +199,7 @@ def update_opensea_events(
                 for t in transfers["asset_events"]:
                     # don't register transfers to burn address
                     if (
-                        t["transaction"] is not None
-                        and t["transaction"]["to_account"]["address"]
+                        MultiLevelNoneToStr(t, ["transaction", "to_account", "address"])
                         is not opensea_burn
                     ):
                         transfer_class = dict_to_transfer(t)

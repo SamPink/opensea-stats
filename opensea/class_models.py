@@ -28,6 +28,16 @@ def None_to_str(string):
     return string
 
 
+def MultiLevelNoneToStr(response_json, level_list=[]):
+    x = response_json
+    for i in range(len(level_list)):
+        x = x[level_list[i]]
+        if x is None:
+            x = ""
+            break
+    return x
+
+
 def get_asset_id(response_json):
     """function to pull out NFT ID"""
     name = response_json["asset"]["name"]
@@ -61,14 +71,20 @@ def dict_to_sales(response_json):
             "asset_id": get_asset_id(response_json),
             "sale_quantity": int(response_json["quantity"]),
             "collection": response_json["collection_slug"],
-            "image_url": response_json["asset"]["image_url"],
+            "image_url": MultiLevelNoneToStr(response_json, ["asset", "image_url"]),
             "time": response_json["created_date"],
             "event_type": response_json["event_type"],
-            "seller_wallet": None_to_str(response_json["seller"]["address"]),
-            "buyer_wallet": None_to_str(response_json["winner_account"]["address"]),
-            "block_hash": None_to_str(response_json["transaction"]["block_hash"]),
+            "seller_wallet": MultiLevelNoneToStr(response_json, ["seller", "address"]),
+            "buyer_wallet": MultiLevelNoneToStr(
+                response_json, ["winner_account", "address"]
+            ),
+            "block_hash": MultiLevelNoneToStr(
+                response_json, ["transaction", "block_hash"]
+            ),
             # info about sale price
-            "sale_currency": None_to_str(response_json["payment_token"]["symbol"]),
+            "sale_currency": MultiLevelNoneToStr(
+                response_json, ["payment_token", "symbol"]
+            ),
             "sale_price": int(response_json["total_price"]) / 1e18,
         }
     )
@@ -100,16 +116,18 @@ def dict_to_transfer(response_json):
             "asset_id": get_asset_id(response_json),
             "sale_quantity": int(response_json["quantity"]),
             "collection": response_json["collection_slug"],
-            "image_url": response_json["asset"]["image_url"],
+            "image_url": MultiLevelNoneToStr(response_json, ["asset", "image_url"]),
             "time": response_json["created_date"],
             "event_type": response_json["event_type"],
-            "from_wallet": None_to_str(
-                response_json["transaction"]["from_account"]["address"]
+            "from_wallet": MultiLevelNoneToStr(
+                response_json, ["transaction", "from_account", "address"]
             ),
-            "to_wallet": None_to_str(
-                response_json["transaction"]["to_account"]["address"]
+            "to_wallet": MultiLevelNoneToStr(
+                response_json, ["transaction", "to_account", "address"]
             ),
-            "block_hash": None_to_str(response_json["transaction"]["block_hash"]),
+            "block_hash": MultiLevelNoneToStr(
+                response_json, ["transaction", "block_hash"]
+            ),
         }
     )
     return x
@@ -157,9 +175,11 @@ def dict_to_listing(response_json):
             "private_auction": response_json["is_private"],
             "auction_type": None_to_str(response_json["auction_type"]),
             "time": response_json["created_date"],
-            "seller_address": response_json["seller"]["address"],
+            "seller_address": MultiLevelNoneToStr(response_json, ["seller", "address"]),
             "duration": auction_time,
-            "listing_currency": response_json["payment_token"]["symbol"],
+            "listing_currency": MultiLevelNoneToStr(
+                response_json, ["payment_token", "symbol"]
+            ),
             "listing_price": int(response_json["ending_price"]) / 1e18,
         }
     )
@@ -189,7 +209,7 @@ def dict_to_canc(response_json):
             "collection": response_json["collection_slug"],
             "event_type": response_json["event_type"],
             "time": response_json["created_date"],
-            "seller_address": None_to_str(response_json["seller"]["address"]),
+            "seller_address": MultiLevelNoneToStr(response_json, ["seller", "address"]),
         }
     )
 
