@@ -7,45 +7,64 @@ import re
 
 import os, sys
 
+
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
 from opensea.database import *
-from opensea.current_listings import *
+from opensea.opensea_collections import *
+
+
+def check_response(url, headers, params=None, method="GET"):
+    response = requests.request(method, url, params=params, headers=headers)
+    if response.ok:
+        return response.json()
+    elif response.status_code == 429:
+        for attempt_x in range(1, 50):
+            print(f"being rated limited...attempt {attempt_x}")
+            time.sleep(5 * attempt_x)  # wait 20 seconds * number of loops
+            response = requests.request(method, url, params=params, headers=headers)
+            if response.ok:
+                return response.json()
+    else:
+
+        # wait 10 seconds and try again
+        time.sleep(10)
+        response = requests.request(method, url, params=params, headers=headers)
+        if response.ok:
+            return response.json()
+        else:
+            # if still nothing, return error
+            print(
+                f"Error in Opensea Events API call. Status code {response.status_code}."
+            )
+            print(response)
+            return None
 
 
 def get_opensea_asset(
-    offset, collection, limit=50, api_key="3eb775e344f14798b49718e86f55608c"
+    offset,
+    collection,
+    limit=50,
+    api_key="3eb775e344f14798b49718e86f55608c",
+    token_ids=None,
 ):
 
     url = "https://api.opensea.io/api/v1/assets"
 
     params = {
         "collection_slug": collection,
-        "offset": offset * 50,
+        "offset": offset * limit,
         "limit": limit,
     }
+    if token_ids is not None:
+        params["token_ids"] = [str(x) for x in token_ids]
+        params["limit"] = 30
 
     headers = {"Accept": "application/json", "X-API-KEY": api_key}
 
-    response = requests.request("GET", url, params=params, headers=headers)
-
-    if response.ok:
-        return response.json()
-    else:
-        print(
-            f"Timed out - request status cose ={response.status_code}. Wait 10 seconds before re-trying"
-        )
-        time.sleep(10)
-        response = requests.request("GET", url, params=params, headers=headers)
-        if response.ok:
-            return response.json()
-        else:
-            # if still nothing, return error
-            print(
-                f"Error in Opensea Asset API call. Status code {response.status_code}."
-            )
-            return None
+    response = check_response(url=url, params=params, headers=headers)
+    return response
 
 
 def get_opensea_metadata(collection, api_key="3eb775e344f14798b49718e86f55608c"):
@@ -54,69 +73,83 @@ def get_opensea_metadata(collection, api_key="3eb775e344f14798b49718e86f55608c")
 
     headers = {"Accept": "application/json", "X-API-KEY": api_key}
 
-    response = requests.request("GET", url, headers=headers)
-
-    if response.status_code == 200:
-        return response.json()
-    else:
-        # wait 10 seconds and try again
-        time.sleep(10)
-        response = requests.request("GET", url, headers=headers)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            # if still nothing, return error
-            print(
-                f"Error in Opensea Events API call. Status code {response.status_code}."
-            )
-            return None
+    response = check_response(url=url, headers=headers)
+    return response
 
 
-def get_collection_assets(collection, id_col="token_id", offset=0):
-
+def get_collection_assets(collection, offset=0):
+    opensea_call_limit = 201
     # work out how many loops to perform
     metadata = get_opensea_metadata(collection=collection)
     n_items = int(metadata["collection"]["stats"]["count"])
     n_api_calls = ceil(n_items / 50)  # calculate number of api calls we'll need to make
-    print(
-        f"{collection} has {n_items} NFTs, {n_api_calls} api calls will be made to retrieve the asset data."
-    )
 
     # work out which traits the collection has
     traits = list(metadata["collection"]["traits"].keys())
-
-    assets = pd.DataFrame()
-    for i in range(offset, n_api_calls):  # change this to get more assets
-        response = get_opensea_asset(offset=i, collection=collection)
-        # check that response is all good
-        if "assets" not in response.keys():
-            time.sleep(3)
-            print(response)
-            response = get_opensea_asset(offset=i, collection=collection)
-        for asset in response["assets"]:
-            df = pd.json_normalize(asset)
-            for t in asset["traits"]:
-                df[t["trait_type"]] = t["value"]
-            assets = assets.append(df)
+    if n_api_calls <= opensea_call_limit:
         print(
-            f"{i} of {n_api_calls} API calls have been made, {assets.shape[0]} {collection}'s retrieved!"
+            f"{collection} has {n_items} NFTs, {n_api_calls} api calls will be made to retrieve the asset data."
         )
+        assets = pd.DataFrame()
+        for i in range(offset, n_api_calls):  # change this to get more assets
+            response = get_opensea_asset(offset=i, collection=collection)
+            # check that response is all good
+            if "assets" not in response.keys():
+                time.sleep(3)
+                print(response)
+                response = get_opensea_asset(offset=i, collection=collection)
+            for asset in response["assets"]:
+                df = pd.json_normalize(asset)
+                for t in asset["traits"]:
+                    df[t["trait_type"]] = t["value"]
+                assets = assets.append(df)
+            print(
+                f"{i} of {n_api_calls+1} API calls have been made, {assets.shape[0]} {collection}'s retrieved!"
+            )
+    else:
+        assets = pd.DataFrame()
+        n_api_calls = ceil(n_items / 30)  # 30 limit when specifying token IDs
+        print(
+            f"{collection} has {n_items} NFTs, {n_api_calls} api calls will be made to retrieve the asset data."
+        )
+        for i in range(offset, n_api_calls):
+            TokenIds2get = list(range((i * 30) + 1, (i * 30) + 31))
+            response = get_opensea_asset(
+                offset=0, collection=collection, token_ids=TokenIds2get
+            )
+            # check that response is all good
+            if "assets" not in response.keys():
+                time.sleep(3)
+                print(response)
+                response = get_opensea_asset(offset=i, collection=collection)
+            for asset in response["assets"]:
+                df = pd.json_normalize(asset)
+                for t in asset["traits"]:
+                    df[t["trait_type"]] = t["value"]
+                assets = assets.append(df)
+            print(
+                f"{i+1} of {n_api_calls} API calls have been made, {assets.shape[0]} {collection}'s retrieved!"
+            )
+
+    # auto detect asset id
+    name = assets.name.iloc[0]
+    id = int(assets.token_id.iloc[0])
+
+    if id < 1e6:
+        assets["asset_id"] = assets["token_id"].astype(int)
+    elif id > 1e6 and re.search("#\d+", name):
+        assets["asset_id"] = (
+            assets["name"].str.split("#", n=2, expand=True)[1].astype(int)
+        )
+    else:
+        assets["asset_id"] = name
 
     assets = assets.reset_index()
-    assets = assets.rename(columns={id_col: "asset_id"})
 
     # count number of traits of each apr
-    assets_traits = assets.copy()[["asset_id"] + traits]
-
-    # is id contained in string with # followed by digits
-    first_id = assets_traits["asset_id"][0]
-    if re.search("#\d+", str(first_id)) is not None and isinstance(first_id, str):
-        assets_traits = assets_traits.assign(
-            asset_id=lambda x: x["asset_id"].str.extract("(\d+)")
-        )
-        assets_traits["asset_id"] = pd.to_numeric(assets_traits["asset_id"])
-
-    assets["asset_id"] = assets["asset_id"].astype(int)
+    assets_traits = assets.copy()[
+        ["asset_id", "name", "image_url", "permalink", "collection.name"] + traits
+    ]
 
     assets_traits["trait_n"] = assets_traits[traits].count(axis=1)
 
