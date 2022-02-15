@@ -177,7 +177,7 @@ def update_opensea_events(
             )
 
     # get data from opensea for NFT transfers
-    if "transfers" in eventTypes:
+    if "transfers" in eventTypes and collection != "cryptopunks":
         all_transfers = []
         opensea_burn = "0x000000000000000000000000000000000000dead"
         i = starting_offset
@@ -218,7 +218,7 @@ def update_opensea_events(
             )
 
     # Get listings data from opensea
-    if "listings" in eventTypes:
+    if "listings" in eventTypes and collection != "cryptopunks":
 
         all_listings = []
         i = starting_offset
