@@ -57,6 +57,10 @@ def get_asset_id(response_json):
 def dict_to_sales(response_json):
     """convert the JSON dictionary returned from opensea API to our defined sales event class"""
     # if item is a bundle (not single item)
+    if response_json["quantity"] is None:
+        print("No sale quantity reported")
+        return None
+
     if int(response_json["quantity"]) > 1:
         print("ignoring sale of bundle")
         return None
@@ -153,6 +157,9 @@ def dict_to_listing(response_json):
         print("ignoring listing of bundle")
         return None
 
+    if response_json["is_private"] is None:
+        response_json["is_private"] = False
+
     if response_json["ending_price"] is None:
         print(f"listing of #{get_asset_id(response_json)} with no price")
         return None
@@ -170,7 +177,7 @@ def dict_to_listing(response_json):
         **{
             "listing_id": int(response_json["id"]),
             "asset_id": get_asset_id(response_json),
-            "collection": response_json["collection_slug"],
+            "collection": None_to_str(response_json["collection_slug"]),
             "event_type": response_json["event_type"],
             "private_auction": response_json["is_private"],
             "auction_type": None_to_str(response_json["auction_type"]),
