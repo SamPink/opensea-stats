@@ -11,6 +11,10 @@ from opensea.opensea_events import *
 
 def update_current_listings(collection, update_DB=True, find_lastUpdated_from_DB=True):
     # update events for collection
+    if collection == "cryptopunks":
+        print("no cryptopunk listing data available from opensea")
+        return None
+
     if update_DB:
         update_opensea_events(
             collection=collection,

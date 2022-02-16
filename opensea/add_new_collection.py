@@ -12,8 +12,6 @@ from opensea.current_listings import *
 from ML.train_collection_x_ML import *
 
 collections = [
-    "superrare",
-    "clonex",
     "hapeprime",
     "livesofasuna",
     "lookatmyraccoon",
@@ -26,6 +24,8 @@ collections = [
     "sneaky-vampire-syndicate",
     "ghxsts",
 ]
+
+collection_autoML("clonex")
 for nft in collections:
     get_collection_assets(nft)
     update_opensea_events(nft)

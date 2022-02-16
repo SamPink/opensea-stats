@@ -57,9 +57,13 @@ def get_asset_id(response_json):
 def dict_to_sales(response_json):
     """convert the JSON dictionary returned from opensea API to our defined sales event class"""
     # if item is a bundle (not single item)
-    if response_json["quantity"] is None:
-        print("No sale quantity reported")
+    if response_json["asset"] is None:
         return None
+    if response_json["asset"]["collection"]["slug"] != response_json["collection_slug"]:
+        print("error in collection of returned asset")
+        return None
+    if response_json["quantity"] is None:
+        response_json["quantity"] = 1
 
     if int(response_json["quantity"]) > 1:
         print("ignoring sale of bundle")
@@ -110,6 +114,13 @@ class transfer_event(BaseModel):
 
 def dict_to_transfer(response_json):
     # if item is a bundle (not single item)
+    if response_json["asset"] is None:
+        return None
+    if response_json["asset"]["collection"]["slug"] != response_json["collection_slug"]:
+        print("error in collection of returned asset")
+        return None
+    if response_json["quantity"] is None:
+        response_json["quantity"] = 1
     if int(response_json["quantity"]) > 1:
         print("ignoring transfer of bundle")
         return None
@@ -153,6 +164,11 @@ class listing_event(BaseModel):
 
 def dict_to_listing(response_json):
     """convert the JSON dictionary returned from opensea API to our defined listing event class"""
+    if response_json["asset"] is None:
+        return None
+    if response_json["asset"]["collection"]["slug"] != response_json["collection_slug"]:
+        print("error in collection of returned asset")
+        return None
     if int(response_json["quantity"]) > 1:
         print("ignoring listing of bundle")
         return None
@@ -204,6 +220,13 @@ class cancellation_event(BaseModel):
 
 def dict_to_canc(response_json):
     """convert the JSON dictionary returned from opensea API to our defined cancellation event class"""
+    if response_json["asset"] is None:
+        return None
+    if response_json["asset"]["collection"]["slug"] != response_json["collection_slug"]:
+        print("error in collection of returned asset")
+        return None
+    if response_json["quantity"] is None:
+        response_json["quantity"] = 1
 
     if int(response_json["quantity"]) > 1:
         print("ignoring cancellation of bundle")
