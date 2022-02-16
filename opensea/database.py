@@ -13,6 +13,14 @@ def connect_mongo():
     return my_db
 
 
+def count_documents(collection, query_filter={}, url=url, database_name=database_name):
+    my_client = MongoClient(url)
+    my_db = my_client[database_name]
+    my_collection = my_db[collection]
+    n_docs = my_collection.count_documents(filter=query_filter)
+    return n_docs
+
+
 def write_mongo(
     collection, data, overwrite=False, database_name=database_name, url=url
 ):
