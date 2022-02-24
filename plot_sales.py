@@ -47,7 +47,7 @@ def plot_sales(collection, last_n_days=120, rolling_n=200):
 # plot_sales("mfers", rolling_n=250, last_n_days=40)
 
 
-def list_delist_ratio(collection, last_n_days=120):
+def plot_floor_depth(collection, last_n_days=120):
     update_opensea_events(collection)
     all = pd.DataFrame()  # define empty dataframe
     event_types = ["sales", "listings", "cancellations", "transfers"]
@@ -62,9 +62,15 @@ def list_delist_ratio(collection, last_n_days=120):
                 query_filter={"private_auction": False, "auction_type": "dutch"},
                 return_df=True,
             ).drop_duplicates()
-            listings["listing_ending"] = listings["time"] + pd.to_timedelta(
-                listings["duration"], "s"
-            )
+            # very long listings can screw with addition
+            # set anything over 5 years to 5years
+            five_yr_in_sec = 1.578e8
+            listings.loc[
+                listings["duration"] > five_yr_in_sec, "duration"
+            ] = five_yr_in_sec
+            listings["duration"] = pd.to_timedelta(listings["duration"], "s")
+
+            listings["listing_ending"] = listings["time"] + listings["duration"]
             df = listings.copy()
         else:
             df = read_mongo(
@@ -76,9 +82,14 @@ def list_delist_ratio(collection, last_n_days=120):
     all = all.sort_values("time")
 
     t0 = dt.datetime.now() - dt.timedelta(days=last_n_days)
+    # if t0 is before first datapoint, choose date from first datapoint
+    if max([t0, listings.time.min()]) == listings.time.min():
+        t0 = listings.time.min()
+        last_n_days = (dt.datetime.now() - t0).days
     days = [t0.date() + dt.timedelta(days=i) for i in range(last_n_days + 1)]
     all["date"] = all["time"].dt.date
     n_listings = pd.DataFrame()
+
     for d in days:
         before_date = all[all["date"] <= d]
         current_median_ETH = (
@@ -92,8 +103,14 @@ def list_delist_ratio(collection, last_n_days=120):
         p = still_listed.listing_price
         still_listed["listing_group"] = pd.cut(
             p,
-            bins=[p.min(), current_median_ETH * 2, p.max()],
-            labels=["reasonable", "high"],
+            bins=[
+                p.min(),
+                current_median_ETH * 2,
+                current_median_ETH * 5,
+                current_median_ETH * 10,
+                p.max(),
+            ],
+            labels=["<2x median", "2-5x median", "5-10x median", ">10x median"],
         )
         x = (
             still_listed.groupby("listing_group")
@@ -104,9 +121,26 @@ def list_delist_ratio(collection, last_n_days=120):
         x["date"] = d
         n_listings = n_listings.append(x)
 
+    # work out number of listings as percentage of collection
+    collection_n = count_documents(f"{collection}_traits")
+    n_listings["listed_perc"] = 100 * (n_listings["n_listings"] / collection_n)
     # plot figure
-    fig = px.bar(n_listings, x="date", y="n_listings", color="listing_group")
+    fig = px.bar(
+        n_listings,
+        x="date",
+        y="listed_perc",
+        color="listing_group",
+        labels={"listed_perc": "Listed %"},
+    )
+    fig.update_layout(
+        font={"size": 16},
+        title={"text": f"<b>{collection} listings over time</b>", "font": {"size": 30}},
+    )
+
     fig.show()
 
 
-list_delist_ratio("boredapeyachtclub")
+collections = ["cryptomories"]
+for i in collections:
+    plot_floor_depth(i, last_n_days=100)
+    plot_sales(i, rolling_n=100, last_n_days=100)
