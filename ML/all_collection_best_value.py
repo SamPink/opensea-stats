@@ -4,21 +4,34 @@ import datetime as dt
 
 import os, sys
 
+
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(parentdir)
 from opensea.database import read_mongo, write_mongo
 from opensea.current_listings import update_current_listings
+from opensea.opensea_collections import all_tables
 
 
 def calc_best_listing(update_listings=True, collection=None):
 
-    if collection == "toucan-gang":
-        print(collection)
-
     # do we want to update the Database
     if update_listings:
         update_current_listings(collection)
+
+    all_in_db = all_tables(collection)
+
+    required_tables = [
+        f"{collection}_still_listed",
+        f"{collection}_traits",
+        f"{collection}_predicted_USD",
+    ]
+
+    # check if all_in_db required tables are in the database
+    if not all(table in all_in_db for table in required_tables):
+        print(f"{collection} is missing some required tables")
+        print(f"{all_in_db}")
+        return None
 
     #####find listed apes
 
@@ -71,6 +84,10 @@ def calc_best_listing(update_listings=True, collection=None):
         query_projection={"_id": 0, "predicted_USD": 1, "asset_id": 1},
         return_df=True,
     )
+
+    # if None or .empty
+    if ApeGang_USD is None or ApeGang_USD.empty:
+        return f"No prediction for {collection}_predicted_USD"
 
     ApeGang_USD = ApeGang_USD.merge(listed, how="right", on="asset_id")
 

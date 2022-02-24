@@ -4,7 +4,8 @@ import pymongo
 import ssl
 
 database_name = "mvh"
-url = "mongodb+srv://mvh:W1xIlKbF46rFCsiM@cluster0.ecrau.mongodb.net/mvh?authSource=admin&replicaSet=atlas-pxb4a1-shard-0&w=majority&readPreference=primary&appname=mongodb-vscode%200.7.0&retryWrites=true&ssl=true"
+# url = "mongodb+srv://mvh:W1xIlKbF46rFCsiM@cluster0.ecrau.mongodb.net/mvh?authSource=admin&replicaSet=atlas-pxb4a1-shard-0&w=majority&readPreference=primary&appname=mongodb-vscode%200.7.0&retryWrites=true&ssl=true"
+url = "mongodb://documentDBone:xNSwXT35i4fejwm@docdb-2022-02-21-18-03-57.cluster-cscdvnycycj7.eu-west-2.docdb.amazonaws.com:27017/?replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
 
 
 def connect_mongo():

@@ -10,20 +10,29 @@ from opensea.opensea_events import *
 
 
 def update_current_listings(collection, update_DB=True, find_lastUpdated_from_DB=True):
-    # update events for collection
-    if collection == "cryptopunks":
-        print("no cryptopunk listing data available from opensea")
-        return None
 
     if update_DB:
-        update_opensea_events(
-            collection=collection,
-            search_after=None,  # if None, will automatically calculate
-            limit=50,
-            update_DB=True,
-            starting_offset=0,
-            find_lastUpdated_from_DB=find_lastUpdated_from_DB,
-        )
+        if collection == "cryptopunks":
+            update_opensea_events(
+                collection=collection,
+                search_after=None,  # if None, will automatically calculate
+                limit=50,
+                update_DB=True,
+                starting_offset=0,
+                find_lastUpdated_from_DB=find_lastUpdated_from_DB,
+                eventTypes=["sales", "transfers"],
+            )
+
+            return None
+        else:
+            update_opensea_events(
+                collection=collection,
+                search_after=None,  # if None, will automatically calculate
+                limit=50,
+                update_DB=True,
+                starting_offset=0,
+                find_lastUpdated_from_DB=find_lastUpdated_from_DB,
+            )
 
     # define projection without ids - containing just things we need to determine if still listed
     projection = {"_id": 0, "time": 1, "event_type": 1, "asset_id": 1}

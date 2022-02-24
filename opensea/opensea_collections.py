@@ -2,6 +2,15 @@ from opensea.database import connect_mongo
 import re
 
 
+def all_tables(collection_name):
+    database = connect_mongo()
+    db_collections = database.collection_names(include_system_collections=False)
+    # all collection containing the collection name
+    collection_regex = re.compile(f".*{collection_name}")
+    collection_names = list(filter(collection_regex.match, db_collections))
+    return collection_names
+
+
 def all_collection_names():
     database = connect_mongo()
     db_collections = database.collection_names(include_system_collections=False)
