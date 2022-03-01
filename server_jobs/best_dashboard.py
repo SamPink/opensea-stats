@@ -21,26 +21,22 @@ def get_urls(collection):
 
 # TODO needs some kind of logging for jobs
 def run_best_dashboard_job():
+    aws_db = db.connect_mongo()
+    all_collections = aws_db.list_collection_names()
+
+    # filter all_collections to only include collections that have "bestvalue_opensea_listings" in the name
     all_collections = [
-        "cool-cats-nft",
-        "the-doge-pound",
-        "world-of-women-nft",
-        "supducks",
-        "cryptoadz-by-gremplin",
-        "rumble-kong-league",
-        "pepsi-mic-drop",
-        "deadfellaz",
-        "doodledogsofficial",
-        "robotos-official",
-        "azuki",
-        "alpacadabraz",
+        collection
+        for collection in all_collections
+        if "bestvalue_opensea_listings" in collection
     ]
 
     best = pd.DataFrame()
     for collection in all_collections:
-        asset_cols = get_urls(collection)
+        print(collection)
+        asset_cols = get_urls(collection.replace("_bestvalue_opensea_listings", ""))
         df = db.read_mongo(
-            f"{collection}_bestvalue_opensea_listings",
+            f"{collection}",
             return_df=True,
             query_projection={
                 "_id": 0,

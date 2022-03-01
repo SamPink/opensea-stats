@@ -26,3 +26,9 @@ def send_tweet(tweet):
     twitter = connect_twitter()
     # send tweet
     return twitter.update_status(tweet)
+
+
+def send_tweet_with_media(tweet, image_path):
+    twitter = connect_twitter()
+    # send tweet with media
+    return twitter.update_status_with_media(tweet, image_path)

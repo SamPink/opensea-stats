@@ -41,6 +41,13 @@ def MultiLevelNoneToStr(response_json, level_list=[]):
 def get_asset_id(response_json):
     """function to pull out NFT ID"""
     name = response_json["asset"]["name"]
+
+    # for ape gang old only
+    # if name is not None andcontains " - TO MIGRATE"
+    if name is not None and " - TO MIGRATE" in name:
+        # remove " - TO MIGRATE"
+        name = name.replace(" - TO MIGRATE", "")
+
     id = int(response_json["asset"]["token_id"])
 
     if id > 1e6 and name is None:
