@@ -189,25 +189,3 @@ def update_current_listings(collection, update_DB=True, find_lastUpdated_from_DB
         )
     else:
         return still_listed
-
-
-update_current_listings("toucan-gang")
-
-"""
-collections = [
-    "ape-gang",
-    "ape-gang-old",
-    "boredapeyachtclub",
-    "bored-ape-kennel-club",
-    "mutant-ape-yacht-club",
-    "chromie-squiggle-by-snowfro",
-    "cool-cats-nft",
-    "cryptoadz-by-gremplin",
-    "cryptomories",
-    "guttercatgang",
-    "toucan-gang",
-    "the-doge-pound",
-]
-for nfts in collections:
-    update_current_listings(collection=nfts)
-"""
