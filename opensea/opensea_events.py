@@ -28,43 +28,31 @@ def sec_since_epoch(time):
 
 
 def get_opensea_events(
-    search_after=None,
-    search_before=None,
-    offset=0,
+    search_before=dt.datetime.now(),
     eventType="created",
     collection="boredapeyachtclub",
     api_key="3eb775e344f14798b49718e86f55608c",
     limit=50,
+    cursor=None,
 ):
-    if search_after is None:
-        search_after = dt.datetime(2000, 1, 1, 0, 0, 0)
 
-    if search_before is None:
-        search_before = dt.datetime.now()
-
-    # if integer - take this as seconds since epoch, otherwise calculate seconds since epoch
-    if isinstance(search_after, int):
-        search_after = search_after
-    else:
-        search_after = sec_since_epoch(search_after)
+    # set headers
+    headers = {"Accept": "application/json", "X-API-KEY": api_key}
 
     # convert in search_before to epoch seconds
-    if isinstance(search_before, int):
-        search_before = search_before
-    else:
+    if not isinstance(search_before, int):
         search_before = sec_since_epoch(search_before)
 
     params = {
         "collection_slug": collection,
         "event_type": eventType,
         "only_opensea": "false",
-        "occurred_after": search_after,
-        "occurred_before": search_before,
-        "offset": offset * limit,
         "limit": limit,
     }
-
-    headers = {"Accept": "application/json", "X-API-KEY": api_key}
+    # if search before param given
+    # if cursor is set, add it as param
+    if cursor is not None:
+        params["cursor"] = cursor
 
     url = "https://api.opensea.io/api/v1/events"
 
@@ -72,14 +60,27 @@ def get_opensea_events(
     return response
 
 
+# define function to convert from dictionary to opensea events object
+def dict_to_events_class(dict, eventType):
+    if eventType == "sales":
+        return dict_to_sales(dict)
+    elif eventType == "listings":
+        return dict_to_listing(dict)
+    elif eventType == "cancellations":
+        return dict_to_canc(dict)
+    elif eventType == "transfers":
+        return dict_to_transfer(dict)
+    else:
+        print(
+            "no valid eventType, cannot conert dictionary to events class...Dumb Fuck"
+        )
+        return None
+
+
 def update_opensea_events(
     collection="boredapeyachtclub",
     eventTypes=["sales", "listings", "transfers", "cancellations"],
-    search_after=None,
-    find_lastUpdated_from_DB=True,
-    search_before=None,
-    find_firstUpdated_from_DB=False,
-    starting_offset=0,
+    search_dir="forward",
     limit=50,
     update_DB=True,
     overwrite_DB=False,
@@ -91,169 +92,74 @@ def update_opensea_events(
     search_before and search_after parameters, allow time-date filter on Opensea API call.
     """
 
-    if find_lastUpdated_from_DB and find_firstUpdated_from_DB:
-        raise Exception(
-            "You have selected automatically update search_before AND search_after from database. Must be done 1 at a time!"
-        )
-
-    if search_after is None and find_lastUpdated_from_DB:
+    if search_dir == "forward":
         # find when database was last updated.
         # Will then call Opensea API, returning events only after this point
-        search_after = get_latest_DB_update(collection)
-    else:
+        search_before = dict.fromkeys(eventTypes, dt.datetime.now())
+        if overwrite_DB == False:
+            search_after = get_latest_DB_update(collection)
+        if overwrite_DB == True:
+            # if overwriting the database, get all data going back to beginning
+            search_after = dict.fromkeys(eventTypes, dt.datetime(2000, 1, 1, 0, 0, 0))
+
+    elif search_dir == "backwards":
         search_after = dict.fromkeys(eventTypes, None)
-
-    if search_before is None and find_firstUpdated_from_DB:
-        # find when the first database entry is
-        # call opensea for events occuring before this time
         search_before = get_oldest_DB_update(collection)
-    else:
-        search_before = dict.fromkeys(eventTypes, None)
+    # create dictionary to convert between what we call eventTypes and what opensea calls them...
+    eventType_dict = {
+        "sales": "successful",
+        "transfers": "transfer",
+        "listings": "created",
+        "cancellations": "cancelled",
+    }
 
-    ###Get sales data from opensea
-    if "sales" in eventTypes:
-        all_sales = []
-        i = starting_offset  # define iterative variable for offsetting
+    for e in eventTypes:
         print("-----------------------------------------------------------")
-        print(f"Getting {collection} sales data...")
-        while True:  # infinite loop, continues until no more detail is obtained
+        print(f"Getting {collection} {e} data...")
 
-            sales = get_opensea_events(
-                offset=i,
-                eventType="successful",
-                collection=collection,
-                search_after=search_after["sales"],
-                search_before=search_before["sales"],
-                limit=limit,
-            )
-            i += 1  # add 1 to offsetting variable with each loop
+        all_data = []
+        i = 0
+        events_data = get_opensea_events(
+            eventType=eventType_dict[e],
+            collection=collection,
+            limit=limit,
+            search_before=search_before[e],
+        )
 
-            if sales is not None and len(sales["asset_events"]) > 0:
+        while i < 10000:  # infinite loop, continues until no more detail is obtained
+            cursor = events_data["next"]
+            i += 1
+
+            if events_data is not None and len(events_data["asset_events"]) > 0:
                 print(f"{i} API calls made")
-                for sale in sales["asset_events"]:
-                    sale_class = dict_to_sales(sale)
-                    if sale_class is not None:
-                        all_sales.append(dict(sale_class))
-
+                for x in events_data["asset_events"]:
+                    events_class_x = dict_to_events_class(dict=x, eventType=e)
+                    if events_class_x is None:
+                        continue
+                    else:
+                        if events_class_x.time <= search_after[e]:
+                            break  # break inner loop
+                        all_data.append(dict(events_class_x))
             else:
                 break
-        print(f"{len(all_sales)} sales found.")
-        # add data to database if update_DB = True
-        if update_DB:
-            print("write sales to MongoDB")
-            write_mongo(
-                collection=f"{collection}_sales", data=all_sales, overwrite=overwrite_DB
-            )
-
-    # get data from opensea for NFT transfers
-    if "transfers" in eventTypes and collection != "cryptopunks":
-        all_transfers = []
-        opensea_burn = "0x000000000000000000000000000000000000dead"
-        i = starting_offset
-        print("-----------------------------------------------------------")
-        print(f"Getting {collection} transfers data...")
-        while True:
-            transfers = get_opensea_events(
-                offset=i,
-                eventType="transfer",  # event type for listing is "created"
+            # break outer while loop
+            if events_class_x is None or events_class_x.time <= search_after[e]:
+                break
+            events_data = get_opensea_events(
+                eventType=eventType_dict[e],
                 collection=collection,
-                search_after=search_after["transfers"],
-                search_before=search_before["transfers"],
                 limit=limit,
+                search_before=search_before[e],
+                cursor=cursor,
             )
-            i += 1  # add 1 to offsetting variable with each loop
 
-            if transfers is not None and len(transfers["asset_events"]) > 0:
-                print(f"{i} API calls made")
-                for t in transfers["asset_events"]:
-                    # don't register transfers to burn address
-                    if (
-                        MultiLevelNoneToStr(t, ["transaction", "to_account", "address"])
-                        is not opensea_burn
-                    ):
-                        transfer_class = dict_to_transfer(t)
-                        if transfer_class is not None:
-                            all_transfers.append(dict(transfer_class))
-
-            else:
-                break
-        print(f"{len(all_transfers)} transfers found.")
+        print(f"{len(all_data)} {e} found.")
         # add data to database if update_DB = True
         if update_DB:
+            print(f"write {collection} {e} to MongoDB")
             write_mongo(
-                collection=f"{collection}_transfers",
-                data=all_transfers,
-                overwrite=overwrite_DB,
+                collection=f"{collection}_{e}", data=all_data, overwrite=overwrite_DB
             )
 
-    # Get listings data from opensea
-    if "listings" in eventTypes and collection != "cryptopunks":
 
-        all_listings = []
-        i = starting_offset
-        print("-----------------------------------------------------------")
-        print(f"Getting {collection} listings data...")
-
-        while True:
-            listings = get_opensea_events(
-                offset=i,
-                eventType="created",  # event type for listing is "created"
-                collection=collection,
-                search_after=search_after["listings"],
-                search_before=search_before["listings"],
-                limit=limit,
-            )
-            i += 1  # add 1 to offsetting variable with each loop
-
-            if listings is not None and len(listings["asset_events"]) > 0:
-                print(f"{i} API calls made")
-                for auction in listings["asset_events"]:
-                    list_class = dict_to_listing(auction)
-                    if list_class is not None:
-                        all_listings.append(dict(list_class))
-            else:
-                break
-        print(f"{len(all_listings)} listings found.")
-        # add data to database if update_DB = True
-        if update_DB:
-            write_mongo(
-                collection=f"{collection}_listings",
-                data=all_listings,
-                overwrite=overwrite_DB,
-            )
-
-    if "cancellations" in eventTypes:
-
-        ## Get cancellation data from opensea
-        all_canc = []
-        i = starting_offset
-        print("-----------------------------------------------------------")
-        print(f"Getting {collection} cancellation data...")
-        while True:
-            canc = get_opensea_events(
-                offset=i,
-                eventType="cancelled",  # get cancellation data
-                collection=collection,
-                search_after=search_after["cancellations"],
-                search_before=search_before["cancellations"],
-                limit=limit,
-            )
-            i += 1  # add 1 to offsetting variable with each loop
-            print(f"{i} API calls made")
-
-            if canc is not None and len(canc["asset_events"]) > 0:
-                for c in canc["asset_events"]:
-                    canc_class = dict_to_canc(c)
-                    if canc_class is not None:
-                        all_canc.append(dict(canc_class))
-            else:
-                break
-        print(f"{len(all_canc)} cancellations found.")
-
-        # add data to database if update_DB = True
-        if update_DB:
-            write_mongo(
-                collection=f"{collection}_cancellations",
-                data=all_canc,
-                overwrite=overwrite_DB,
-            )
+# update_opensea_events(collection="pixeldoges", overwrite_DB=True)

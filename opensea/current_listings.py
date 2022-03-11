@@ -12,36 +12,28 @@ from opensea.database import *
 from opensea.opensea_events import *
 
 
-def update_current_listings(collection, update_DB=True, find_lastUpdated_from_DB=True):
+def update_current_listings(collection):
     # get list of database collections
     database = connect_mongo()
     db_collections = database.collection_names(include_system_collections=False)
-    if update_DB:
-        if f"{collection}_listings" not in db_collections:
-            update_opensea_events(
-                collection=collection,
-                search_after=None,  # if None, will automatically calculate
-                limit=50,
-                update_DB=True,
-                starting_offset=0,
-                find_lastUpdated_from_DB=find_lastUpdated_from_DB,
-                eventTypes=["sales", "transfers"],
-            )
 
-            return None
-        else:
-            update_opensea_events(
-                collection=collection,
-                search_after=None,  # if None, will automatically calculate
-                limit=50,
-                update_DB=True,
-                starting_offset=0,
-                find_lastUpdated_from_DB=find_lastUpdated_from_DB,
-            )
-    # do we actually have listings for this collection
     if f"{collection}_listings" not in db_collections:
         print(f"No listings found for {collection}")
+        update_opensea_events(
+            collection=collection,
+            eventTypes=["sales", "transfers"],
+            search_dir="forward",
+            limit=50,
+            update_DB=True,
+        )
         return None
+    else:
+        update_opensea_events(
+            collection=collection,
+            search_dir="forward",  # if None, will automatically calculate
+            limit=50,
+            update_DB=True,
+        )
 
     # define projection without ids - containing just things we need to determine if still listed
     projection = ["time", "event_type", "asset_id", "sale_price"]
@@ -100,6 +92,14 @@ def update_current_listings(collection, update_DB=True, find_lastUpdated_from_DB
 
     print(
         f"{still_listed.shape[0]} {collection}'s are currently listed, with a floor of {still_listed.listing_price.min()} ETH"
+    )
+
+    # write still listed to database
+    write_mongo(
+        collection=f"{collection}_still_listed",
+        # mongo doesn't seem to like timedelta
+        data=still_listed.drop(columns=["duration"]),
+        overwrite=True,
     )
 
     # Now update collection_floor stats
@@ -179,13 +179,6 @@ def update_current_listings(collection, update_DB=True, find_lastUpdated_from_DB
 
         floor_stats = floor_stats.append(x, ignore_index=True)
 
-    if update_DB:
-        write_mongo(
-            collection=f"{collection}_still_listed", data=still_listed, overwrite=True
-        )
-
-        write_mongo(
-            collection=f"{collection}_floor_stats", data=floor_stats, overwrite=False
-        )
-    else:
-        return still_listed
+    write_mongo(
+        collection=f"{collection}_floor_stats", data=floor_stats, overwrite=False
+    )
