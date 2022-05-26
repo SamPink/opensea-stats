@@ -1,6 +1,6 @@
 # # Load Libraries
 
-from xgboost import XGBRegressor
+# from xgboost import XGBRegressor
 from sklearn.svm import SVR
 from sklearn.linear_model import LinearRegression, SGDRegressor
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
@@ -22,7 +22,8 @@ sys.path.append(parentdir)
 from opensea.opensea_collections import all_collections_with_traits
 from opensea.opensea_assets import get_opensea_metadata
 from opensea.cryto_prices import update_eth_usd
-from opensea.database import read_mongo, write_mongo
+from opensea.database import *
+from opensea.current_listings import *
 
 # Now import local modules
 
@@ -48,10 +49,6 @@ def collection_autoML(collection, sales_after=dt.datetime(2000, 1, 1)):
         query_filter=only_ETH,
     ).drop_duplicates()  # drop any duplicate sales
 
-    if sales.shape[0] < 4000:
-        print(f"{sales.shape[0]} {collection} is not enough to train model")
-        return None
-
     if collection == "cryptopunks":
         top_legit_sale = 8500
         sales = sales[
@@ -74,8 +71,8 @@ def collection_autoML(collection, sales_after=dt.datetime(2000, 1, 1)):
         update_eth_usd()
     ETH_USD = read_mongo(
         "eth-usd",
-        return_df=True,
         query_filter={"time": {"$in": sales.sale_hour.to_list()}},
+        return_df=True,
     )
 
     # calculate USD price at time of sale
@@ -104,17 +101,58 @@ def collection_autoML(collection, sales_after=dt.datetime(2000, 1, 1)):
 
     sales["price_perc"] = (sales["sale_USD"] / sales["rolling_ave_USD"]) * 100
     sales = sales[sales["price_perc"] > 20]
-    if sales.shape[0] < 2000:
+    if sales.shape[0] < 6000:
         print(
-            f"{collection} only has {sales.shape[0]} sales, not enough to build model - at least 2000 required.."
+            f"{collection} only has {sales.shape[0]} sales, not enough to build model - at least 6000 required.."
         )
         return None
     print(f"Retrieved {sales.shape[0]} {collection} sales after {sales_after}")
 
+    # add floor price data
+    db_collections = connect_mongo().collection_names(include_system_collections=False)
+    floor_stats_name = f"{collection}_floor_stats"
+    if floor_stats_name not in db_collections:
+        update_current_listings(collection)
+    floor_stats = read_mongo(
+        floor_stats_name,
+        query_projection=[
+            "date",
+            "perc_listed",
+            "percentile_2_ETH",
+            "median_listing_ETH",
+            "percentile_80_ETH",
+            "perc_listings_under_2x",
+            "perc_listings_2-5x",
+            "perc_listings_5-10x",
+        ],
+        return_df=True,
+    )
+
+    floor_stats["date"] = floor_stats["date"].dt.date
+    sales["date"] = sales["time"].dt.date
+    sales = sales.merge(floor_stats, on="date", how="left")
+
     # now get traits info
+    # define a list of numeric columns to scale in ML preprocerssing
+    NumCols2Scale = [
+        "trait_n_rarity",
+        "min_rarity",
+        "factoral_rarity",
+        "rarity_rank",
+        "rolling_ave_USD",
+    ]
 
     metadata = get_opensea_metadata(collection=collection)
     trait_list = list(metadata["collection"]["traits"].keys())
+    # if traits no supplied in metadata, identify them from traits column names
+    if len(trait_list) < 1:
+        traits_df_cols = read_mongo(
+            f"{collection}_traits", query_limit=1, return_df=True
+        ).columns
+        # remove rarity columns
+        no_rarity_cols = [x for x in traits_df_cols if "rarity" not in x]
+        trait_list = list(set(no_rarity_cols) - set(["asset_id", "trait_n"]))
+
     fields = [
         "asset_id",
         "trait_n",
@@ -124,13 +162,32 @@ def collection_autoML(collection, sales_after=dt.datetime(2000, 1, 1)):
         "rarity_rank",
     ] + trait_list
 
-    rarity_cols = [x + "_rarity" for x in trait_list]
-
     traits = read_mongo(
         f"{collection}_traits",
         query_sort=[("rarity_rank", 1)],
         return_df=True,
     )
+
+    numeric_traits = traits[trait_list].select_dtypes(include=np.number)
+    # does this collection contain numerical traits??
+    # if so, rarity isn't a valid measure
+    if numeric_traits.shape[1] > 0:
+        categorical_traits = traits[trait_list].select_dtypes(include=np.number)
+        # drop rarity values of numeric columns (as their invalid)
+        traits.drop(columns=[x + "_rarity" for x in numeric_traits.columns])
+        #
+        rarity_cols = [x + "_rarity" for x in categorical_traits.columns]
+        factorial_rarity = 1 / traits[rarity_cols]
+        traits["factoral_rarity"] = factorial_rarity.sum(axis=1)
+        traits = traits.sort_values("factoral_rarity", ascending=False)
+        traits["rarity_rank"] = np.arange(1, traits.shape[0] + 1, 1)
+        # add trait names
+        NumCols2Scale = NumCols2Scale + list(numeric_traits.columns)
+        categorical_traits = [x for x in trait_list if x not in numeric_traits.columns]
+    else:
+        rarity_cols = [x + "_rarity" for x in trait_list]
+        categorical_traits = trait_list
+
     # calculate min rarity
     traits["asset_id"] = pd.to_numeric(traits["asset_id"])
     traits["min_rarity"] = traits[rarity_cols].min(axis=1)
@@ -140,22 +197,15 @@ def collection_autoML(collection, sales_after=dt.datetime(2000, 1, 1)):
 
     df = pd.get_dummies(
         traits_sales,
-        columns=trait_list + ["trait_n"],
+        columns=categorical_traits + ["trait_n"],
     )
 
     # scale numeric colum
     # scale numeric data
     df_scaled = df.copy()
     scaler = StandardScaler()
-    num_cols = [
-        "trait_n_rarity",
-        "min_rarity",
-        "factoral_rarity",
-        "rarity_rank",
-        "rolling_ave_USD",
-    ]
-    scaler.fit(df_scaled[num_cols])
-    df_scaled[num_cols] = scaler.transform(df_scaled[num_cols])
+    scaler.fit(df_scaled[NumCols2Scale])
+    df_scaled[NumCols2Scale] = scaler.transform(df_scaled[NumCols2Scale])
 
     # make train-test splits
 
@@ -171,7 +221,7 @@ def collection_autoML(collection, sales_after=dt.datetime(2000, 1, 1)):
     # get data to predict new values from
     X_predict = df.copy().drop_duplicates("asset_id").drop(columns=["sale_USD"])
     X_predict.rolling_ave_USD = current_USD_ave
-    X_predict[num_cols] = scaler.transform(X_predict[num_cols])
+    X_predict[NumCols2Scale] = scaler.transform(X_predict[NumCols2Scale])
 
     # train some basic models to find which algorith performs best on the data
     models = []
@@ -179,14 +229,14 @@ def collection_autoML(collection, sales_after=dt.datetime(2000, 1, 1)):
     trained_models = []
     model_ypreds = []
     models.append(("Linear Regression", LinearRegression()))
-    models.append(
-        (
-            "XGBoost",
-            XGBRegressor(
-                n_estimators=X.shape[1] * 5, max_depth=7, eta=0.1, subsample=0.7
-            ),
-        )
-    )
+    # models.append(
+    #    (
+    #        "XGBoost",
+    #        XGBRegressor(
+    #            n_estimators=X.shape[1] * 5, max_depth=7, eta=0.1, subsample=0.7
+    #        ),
+    #    )
+    # )
     # models.append(
     #    (
     #        "Multi-layer Perceptron",
@@ -264,3 +314,7 @@ def collection_autoML(collection, sales_after=dt.datetime(2000, 1, 1)):
     write_mongo(
         data=predictions, collection=f"{collection}_predicted_USD", overwrite=True
     )
+
+
+collection_autoML("cool-cats-nft")
+print("end")

@@ -191,6 +191,12 @@ def dict_to_listing(response_json):
         print("Ignoring listings with no currency record")
         return None
 
+    if int(response_json["starting_price"]) != int(response_json["ending_price"]):
+        print(
+            f"listing of #{get_asset_id(response_json)} with different starting and ending prices"
+        )
+        return None
+
     if response_json["duration"] is None:
         auction_time = 1e9
     else:

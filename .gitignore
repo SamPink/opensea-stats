@@ -1,3 +1,6 @@
 env/*
 */__pycache__/*
 sc_for_twitter/*
+*pkl
+ML_models/***
+__pycache__/***

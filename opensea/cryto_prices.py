@@ -21,7 +21,7 @@ def update_eth_usd():
     # convert last update to string
     start_query = (last_update + dt.timedelta(minutes=1)).strftime("%Y-%m-%d-%H-%M")
 
-    eth_usd = HistoricalData("ETH-USD", 60, start_query).retrieve_data()
+    eth_usd = HistoricalData("ETH-USD", 3600, start_query).retrieve_data()
 
     eth_usd["time"] = eth_usd.index
 

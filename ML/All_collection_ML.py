@@ -121,6 +121,7 @@ for x in collections:
 
 
 # convert price to dollars
+
 sales["sale_hour"] = sales["time"].dt.floor("h")
 sales = sales.drop(columns="time")
 latest_ETH_update = read_mongo(
@@ -139,7 +140,7 @@ ETH_USD = read_mongo(
 )
 
 
-sales = sales.merge(ETH_USD, how="left", left_on="sale_hour", right_on="time")
+sales = sales.merge(ETH_USD, how="inner", left_on="sale_hour", right_on="time")
 sales["sale_USD"] = sales["sale_price"]
 ETH_sale = sales.sale_currency.isin(["WETH", "ETH"])
 # if sales are in ETH, convert USD price
@@ -246,26 +247,26 @@ MAE = []
 Explained_Variance = []
 trained_models = []
 model_ypreds = []
-models.append(("Linear Regression", LinearRegression()))
-models.append(
-    (
-        "XGBoost",
-        XGBRegressor(n_estimators=x.shape[1] * 5, max_depth=7, eta=0.1, subsample=0.7),
-    )
-)
+# models.append(("Linear Regression", LinearRegression()))
+# models.append(
+#    (
+#        "XGBoost",
+#        XGBRegressor(n_estimators=x.shape[1] * 5, max_depth=7, eta=0.1, subsample=0.7),
+#    )
+# )
 
-models.append(("Random Forest", RandomForestRegressor(n_estimators=(x.shape[1] * 5))))
-models.append(
-    (
-        "Random Forest - new params",
-        RandomForestRegressor(
-            n_estimators=(x.shape[1] * 8), max_depth=12, max_features=0.5
-        ),
-    )
-)
-models.append(("Stochastic Gradient Descent", SGDRegressor()))
-models.append(("Gradient Boosting", GradientBoostingRegressor()))
-models.append(("Support Vector Machine", SVR()))
+# models.append(("Random Forest", RandomForestRegressor(n_estimators=(x.shape[1] * 5))))
+# models.append(
+#    (
+#        "Random Forest - new params",
+# RandomForestRegressor(
+#    n_estimators=(x.shape[1] * 8), max_depth=12, max_features=0.5
+# ),
+# )
+# )
+# models.append(("Stochastic Gradient Descent", SGDRegressor()))
+# models.append(("Gradient Boosting", GradientBoostingRegressor()))
+# models.append(("Support Vector Machine", SVR()))
 
 model_CV2 = GridSearchCV(
     RandomForestRegressor(n_estimators=500, max_depth=13, max_features=0.5, n_jobs=-1),

@@ -27,6 +27,8 @@ def get_images():
         if "bestvalue_opensea_listings" in collection
     ]
 
+    # all_collections = ["mfers_bestvalue_opensea_listings"]
+
     for collection in all_collections:
         col = collection.replace("_bestvalue_opensea_listings", "")
         driver.get(f"http://localhost:5002/predicted/{col}")

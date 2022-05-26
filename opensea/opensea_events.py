@@ -160,6 +160,3 @@ def update_opensea_events(
             write_mongo(
                 collection=f"{collection}_{e}", data=all_data, overwrite=overwrite_DB
             )
-
-
-# update_opensea_events(collection="pixeldoges", overwrite_DB=True)

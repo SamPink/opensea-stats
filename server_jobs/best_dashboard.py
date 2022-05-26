@@ -31,6 +31,9 @@ def run_best_dashboard_job():
         if "bestvalue_opensea_listings" in collection
     ]
 
+    # drop ape-gang listings
+    all_collections.remove("ape-gang_bestvalue_opensea_listings")
+
     best = pd.DataFrame()
     for collection in all_collections:
         print(collection)
